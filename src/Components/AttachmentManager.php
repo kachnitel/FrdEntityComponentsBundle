@@ -9,6 +9,7 @@ use Frd\EntityComponentsBundle\Interface\AttachmentInterface;
 use Frd\EntityComponentsBundle\Interface\FileHandlerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\FormInterface;
