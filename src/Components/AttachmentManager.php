@@ -30,7 +30,10 @@ final class AttachmentManager extends AbstractController
     use ComponentToolsTrait;
 
     #[LiveProp]
-    public AttachableInterface $entity;
+    public int $entityId;
+
+    #[LiveProp]
+    public string $entityClass;
 
     #[LiveProp]
     public string $attachmentClass;
@@ -43,32 +46,77 @@ final class AttachmentManager extends AbstractController
 
     public array $errors = [];
 
+    #[ExposeInTemplate(getter: 'getEntity')]
+    private ?AttachableInterface $entity = null;
+
     public function __construct(
         private EntityManagerInterface $entityManager,
         private FileHandlerInterface $fileHandler,
         private LoggerInterface $logger
     ) {}
 
+    public function mount(AttachableInterface $entity, string $attachmentClass): void
+    {
+        if (!method_exists($entity, 'getId')) {
+            throw new \InvalidArgumentException('Entity must have a getId() method.');
+        }
+
+        if (!is_a($attachmentClass, AttachmentInterface::class, true)) {
+            throw new \InvalidArgumentException("Attachment class must implement AttachmentInterface. {$attachmentClass} does not.");
+        }
+
+        // Store the real class name (handles Doctrine proxies)
+        $reflection = new \ReflectionClass($entity);
+        while ($reflection->getParentClass() && str_contains($reflection->getName(), 'Proxies')) {
+            $reflection = $reflection->getParentClass();
+        }
+
+        $this->entityClass = $reflection->getName();
+        $this->entityId = $entity->getId();
+        $this->attachmentClass = $attachmentClass;
+        $this->entity = $entity;
+    }
+
+    public function getEntity(): AttachableInterface
+    {
+        if (!$this->entity) {
+            $entity = $this->entityManager->getRepository($this->entityClass)->find($this->entityId);
+
+            if (!$entity) {
+                throw new NotFoundHttpException("{$this->entityClass} with id {$this->entityId} not found.");
+            }
+
+            if (!$entity instanceof AttachableInterface) {
+                throw new \InvalidArgumentException("{$this->entityClass} must implement AttachableInterface.");
+            }
+
+            $this->entity = $entity;
+        }
+
+        return $this->entity;
+    }
+
     #[ExposeInTemplate('attachments')]
     public function getAttachments(): array
     {
+        $entity = $this->getEntity();
         $method = 'get' . ucfirst($this->property);
 
-        if (!method_exists($this->entity, $method)) {
+        if (!method_exists($entity, $method)) {
             throw new Exception(sprintf(
                 'Method "%s" does not exist on entity "%s"',
                 $method,
-                get_class($this->entity)
+                get_class($entity)
             ));
         }
 
-        $attachments = $this->entity->$method();
+        $attachments = $entity->$method();
 
         if (!$attachments instanceof \Doctrine\Common\Collections\Collection) {
             throw new Exception(sprintf(
                 'Property "%s" is not a Collection on entity "%s"',
                 $this->property,
-                get_class($this->entity)
+                get_class($entity)
             ));
         }
 
@@ -77,13 +125,7 @@ final class AttachmentManager extends AbstractController
 
     protected function instantiateForm(): FormInterface
     {
-        // Get the actual entity class (handle Doctrine proxies)
-        $entityClass = get_class($this->entity);
-        if (str_contains($entityClass, 'Proxies\\__CG__\\')) {
-            $entityClass = get_parent_class($this->entity);
-        }
-
-        $entity = $this->entityManager->getRepository($entityClass)->find($this->entity->getId());
+        $entity = $this->entityManager->getRepository($this->entityClass)->find($this->entityId);
 
         return $this->createFormBuilder($entity)
             ->add($this->property, CollectionType::class, [
@@ -146,6 +188,7 @@ final class AttachmentManager extends AbstractController
 
     protected function handleFiles(array $files): void
     {
+        $entity = $this->getEntity();
         $adderMethod = $this->getMethod('add');
 
         foreach ($files as $file) {
@@ -154,7 +197,7 @@ final class AttachmentManager extends AbstractController
             }
 
             $attachment = $this->fileHandler->handle($file);
-            $this->entity->$adderMethod($attachment);
+            $entity->$adderMethod($attachment);
         }
     }
 
@@ -175,8 +218,9 @@ final class AttachmentManager extends AbstractController
                 throw new Exception('Attachment not found');
             }
 
+            $entity = $this->getEntity();
             $removerMethod = $this->getMethod('remove');
-            $this->entity->$removerMethod($attachment);
+            $entity->$removerMethod($attachment);
 
             $this->fileHandler->deleteFile($attachment);
 
@@ -201,18 +245,19 @@ final class AttachmentManager extends AbstractController
 
     private function getMethod(string $prefix): string
     {
+        $entity = $this->getEntity();
         // Try standard naming: addAttachment, removeAttachment
         $singularProperty = rtrim($this->property, 's');
         $method = $prefix . ucfirst($singularProperty);
 
-        if (method_exists($this->entity, $method)) {
+        if (method_exists($entity, $method)) {
             return $method;
         }
 
         throw new Exception(sprintf(
             'Method "%s" does not exist on entity "%s"',
             $method,
-            get_class($this->entity)
+            get_class($entity)
         ));
     }
 }
