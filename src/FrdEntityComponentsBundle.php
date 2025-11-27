@@ -3,6 +3,7 @@
 namespace Frd\EntityComponentsBundle;
 
 use Frd\EntityComponentsBundle\Components\AttachmentManager;
+use Frd\EntityComponentsBundle\Components\CommentsManager;
 use Frd\EntityComponentsBundle\Components\TagManager;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -25,6 +26,10 @@ class FrdEntityComponentsBundle extends AbstractBundle
             ->setAutoconfigured(true);
 
         $container->register(AttachmentManager::class)
+            ->setAutowired(true)
+            ->setAutoconfigured(true);
+
+        $container->register(CommentsManager::class)
             ->setAutowired(true)
             ->setAutoconfigured(true);
     }

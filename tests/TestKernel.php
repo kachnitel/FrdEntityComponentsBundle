@@ -60,6 +60,12 @@ class TestKernel extends Kernel
             ->setSynthetic(true);
 
         $container->setAlias(\Psr\Log\LoggerInterface::class, 'test.logger');
+
+        // Mock Security for CommentsManager
+        $container->register('test.security', \Symfony\Bundle\SecurityBundle\Security::class)
+            ->setSynthetic(true);
+
+        $container->setAlias(\Symfony\Bundle\SecurityBundle\Security::class, 'test.security');
     }
 
     public function getCacheDir(): string

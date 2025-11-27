@@ -24,6 +24,7 @@ abstract class ComponentTestCase extends KernelTestCase
         $container->set('doctrine.orm.entity_manager', $this->createMock(\Doctrine\ORM\EntityManagerInterface::class));
         $container->set('test.file_handler', $this->createMock(\Frd\EntityComponentsBundle\Interface\FileHandlerInterface::class));
         $container->set('test.logger', $this->createMock(\Psr\Log\LoggerInterface::class));
+        $container->set('test.security', $this->createMock(\Symfony\Bundle\SecurityBundle\Security::class));
 
         $this->factory = $container->get('ux.twig_component.component_factory');
     }
