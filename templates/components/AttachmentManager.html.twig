@@ -46,6 +46,13 @@
                       {{ attachment.url|split('/')|last }}
                     </a>
                   </p>
+                  {% if this.tagClass %}
+                    {{ component('FRD:Entity:TagManager', {
+                      entity: attachment,
+                      tagClass: this.tagClass,
+                      readOnly: this.readOnly
+                    }) }}
+                  {% endif %}
                 {% endblock %}
               </div>
 
@@ -102,7 +109,7 @@
               type="button"
               class="btn btn-primary"
               data-action="live#action"
-              data-live-action-param="{{ this.property }}|submit"
+              data-live-action-param="submit"
               {{ form.vars.disabled ? 'disabled' }}
             >
               Upload

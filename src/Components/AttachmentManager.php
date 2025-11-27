@@ -45,6 +45,9 @@ final class AttachmentManager extends AbstractController
     #[LiveProp]
     public string $property = 'attachments';
 
+    #[LiveProp]
+    public ?string $tagClass = null;
+
     public array $errors = [];
 
     #[ExposeInTemplate(getter: 'getEntity')]
