@@ -26,4 +26,9 @@ interface TagInterface
      * Get the tag category (optional grouping)
      */
     public function getCategory(): ?string;
+
+    /**
+     * Get the category color (hex color code without #)
+     */
+    public function getCategoryColor(): string;
 }

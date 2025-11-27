@@ -2,12 +2,15 @@
   {% block tag_list %}
     {% for tag in this.tags %}
       {% block tag_badge %}
-        <span class="badge bg-secondary">
+        {% set bgColor = '#' ~ tag.categoryColor %}
+        {% set textColor = bgColor|isLight ? '#000' : '#fff' %}
+        <span class="badge tag me-1" style="background-color: {{ bgColor }}; color: {{ textColor }}; font-size: 0.75rem;">
           {{ tag.displayName|default(tag.value) }}
           {% if not this.readOnly %}
             <button
               type="button"
-              class="btn-close btn-close-white ms-1"
+              class="btn-close ms-1"
+              style="font-size: 0.5rem; filter: {{ bgColor|isLight ? 'none' : 'invert(1)' }};"
               data-action="live#action"
               data-live-tag-id-param="{{ tag.id }}"
               data-live-action-param="removeTag"
@@ -40,9 +43,12 @@
         <div class="frd-tag-selector mt-2 p-2 border rounded">
           <div class="d-flex flex-wrap gap-2">
             {% for tag in allTags|sort((a, b) => (a.displayName|default(a.value)) <=> (b.displayName|default(b.value))) %}
+              {% set bgColor = '#' ~ tag.categoryColor %}
+              {% set textColor = bgColor|isLight ? '#000' : '#fff' %}
               <button
                 type="button"
-                class="btn btn-sm btn-outline-{{ tag in tags ? 'danger' : 'success' }}"
+                class="btn btn-sm"
+                style="background-color: {{ bgColor }}; color: {{ textColor }}; border-color: {{ bgColor }};"
                 data-action="live#action"
                 data-live-tag-id-param="{{ tag.id }}"
                 data-live-action-param="{{ tag in tags ? 'removeTag' : 'addTag' }}"

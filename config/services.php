@@ -10,4 +10,7 @@ return static function (ContainerConfigurator $container): void {
 
     // Register all components from the Components directory
     $services->load('Frd\\EntityComponentsBundle\\Components\\', dirname(__DIR__) . '/src/Components');
+
+    // Register Twig extensions
+    $services->load('Frd\\EntityComponentsBundle\\Twig\\', dirname(__DIR__) . '/src/Twig');
 };
