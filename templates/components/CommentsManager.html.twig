@@ -1,0 +1,70 @@
+<div{{ attributes }}>
+  <div class="row">
+    {% for error in this.errors %}
+      <div class="col-12">
+        <div class="alert alert-danger" role="alert">
+          {{ error }}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  <div class="row">
+    {% for comment in comments %}
+      {% set createdBy = comment.createdBy %}
+      {% set own = app.user and createdBy and createdBy.id is defined and createdBy.id == app.user.id %}
+      <div class="col-12">
+        <div class="card mb-3">
+          <div class="card-header d-flex align-items-end py-1">
+            <span>
+              {% if createdBy %}
+                <span class="text-{{ own ? 'info' : 'body' }}">
+                  <span class="material-icons fs-6 align-middle">person</span>
+                  {{ createdBy.name is defined ? createdBy.name : createdBy }}
+                </span>
+              {% else %}
+                <span class="text-muted">
+                  <span class="material-icons fs-6 align-middle">person</span>
+                  Unknown
+                </span>
+              {% endif %}
+            </span>
+            <span class="small text-muted ms-auto">{{ comment.createdAt|date('d.m.Y H:i') }}</span>
+            {% if own or is_granted('ROLE_ADMIN') %}
+              <button
+                class="btn btn-sm btn-outline-danger p-0 opacity-25 opacity-hover-100 ms-2"
+                type="button"
+                data-action="live#action"
+                data-live-action-param="deleteComment(id={{ comment.id }}, csrfToken={{ csrf_token('delete-comment-' ~ comment.id) }})"
+              >
+                <span class="material-icons">{{ comment.id == this.confirmId ? 'delete_forever' : 'delete' }}</span>
+                {{ comment.id == this.confirmId ? 'Confirm' : '' }}
+              </button>
+            {% endif %}
+          </div>
+          <div class="card-body">
+            <p class="card-text">{{ comment.text }}</p>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  {% if not readOnly %}
+    {{ form_start(form) }}
+      <div class="input-group">
+        <div class="form-floating">
+          {{ form_widget(form.text, { attr: { style: 'height: initial;' } }) }} {# override float label height #}
+          {{ form_label(form.text) }}
+        </div>
+        <button
+          class="btn btn-sm btn-primary"
+          type="button"
+          data-action="live#action"
+          data-live-action-param="submit"
+          {{ form.vars.disabled ? 'disabled' }}
+        >
+          <span class="material-icons">send</span>
+        </button>
+      </div>
+    {{ form_end(form) }}
+  {% endif %}
+</div>
