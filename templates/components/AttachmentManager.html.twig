@@ -81,11 +81,7 @@
   {% if not this.readOnly %}
     {% block upload_form %}
       <div class="mt-3">
-        {{ form_start(form, {
-          attr: {
-            'data-action': 'live#submit'
-          }
-        }) }}
+        {{ form_start(form) }}
           {{ form_errors(form) }}
           {{ form_widget(form) }}
           <button
@@ -101,8 +97,10 @@
             Add file
           </button>
           <button
-            type="submit"
+            type="button"
             class="btn btn-primary"
+            data-action="live#action"
+            data-live-action-param="submit|files"
             {{ form.vars.disabled ? 'disabled' }}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-upload" viewBox="0 0 16 16">
