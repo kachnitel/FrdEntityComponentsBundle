@@ -16,7 +16,7 @@ class TagManagerTest extends ComponentTestCase
 
         $this->assertFalse($component->readOnly);
         $this->assertFalse($component->showingTags);
-        $this->assertIsArray($component->tags);
-        $this->assertEmpty($component->tags);
+        $this->assertIsArray($component->tagIds);
+        $this->assertEmpty($component->tagIds);
     }
 }
