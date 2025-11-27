@@ -66,7 +66,7 @@ class Product implements TaggableInterface
 ### 3. Use the TagManager Component
 
 ```twig
-<twig:FRD:TagManager
+<twig:FRD:Entity:TagManager
     entity="{{ product }}"
     tagClass="App\\Entity\\Tag"
 />
@@ -163,7 +163,7 @@ class LocalStorageHandler implements FileHandlerInterface
 ### 4. Use the AttachmentManager Component
 
 ```twig
-<twig:FRD:AttachmentManager
+<twig:FRD:Entity:AttachmentManager
     entity="{{ product }}"
     attachmentClass="App\\Entity\\UploadedFile"
 />
@@ -186,7 +186,7 @@ Live Component for managing tags on entities.
 
 **Usage:**
 ```twig
-<twig:FRD:TagManager
+<twig:FRD:Entity:TagManager
     entity="{{ product }}"
     tagClass="App\\Entity\\Tag"
 />
@@ -207,7 +207,7 @@ Live Component for managing file attachments on entities.
 
 **Usage:**
 ```twig
-<twig:FRD:AttachmentManager
+<twig:FRD:Entity:AttachmentManager
     entity="{{ product }}"
     attachmentClass="App\\Entity\\UploadedFile"
 />
@@ -240,12 +240,12 @@ class LocalStorageHandler implements FileHandlerInterface
 All components use blocks that can be overridden:
 
 ```twig
-<twig:FRD:TagManager entity="{{ product }}" tagClass="App\\Entity\\Tag">
+<twig:FRD:Entity:TagManager entity="{{ product }}" tagClass="App\\Entity\\Tag">
     {% block tag_badge %}
         {# Custom tag display #}
         <span class="custom-tag">{{ tag.value }}</span>
     {% endblock %}
-</twig:FRD:TagManager>
+</twig:FRD:Entity:TagManager>
 ```
 
 ## Requirements
