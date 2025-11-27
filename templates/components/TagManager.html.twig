@@ -76,10 +76,10 @@
   {% endif %}
 </div>
 
-{% block loading_indicator %}
-  <div data-loading="delay|show">
+{% macro placeholder(props) %}
+  <div class="frd-tag-manager">
     <div class="spinner-border spinner-border-sm text-primary" role="status">
       <span class="visually-hidden">Loading...</span>
     </div>
   </div>
-{% endblock %}
+{% endmacro %}
