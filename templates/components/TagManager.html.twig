@@ -1,0 +1,87 @@
+{% props tagClass %}
+
+<div{{ attributes.defaults({ class: 'frd-tag-manager' }) }}>
+  {% block tag_list %}
+    {% for tag in this.tags %}
+      {% block tag_badge %}
+        <span class="badge bg-secondary">
+          {{ tag.displayName|default(tag.value) }}
+          {% if not this.readOnly %}
+            <button
+              type="button"
+              class="btn-close btn-close-white ms-1"
+              data-action="live#action"
+              data-live-tag-id-param="{{ tag.id }}"
+              data-live-action-param="removeTag"
+              aria-label="Remove tag"
+            ></button>
+          {% endif %}
+        </span>
+      {% endblock %}
+    {% endfor %}
+  {% endblock %}
+
+  {% if not this.readOnly %}
+    {% block add_button %}
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-primary"
+        data-action="live#action"
+        data-live-action-param="toggleTagList"
+      >
+        {% if this.showingTags %}
+          Hide Tags
+        {% else %}
+          + Add Tag
+        {% endif %}
+      </button>
+    {% endblock %}
+
+    {% if this.showingTags %}
+      {% block tag_selector %}
+        <div class="frd-tag-selector mt-2 p-2 border rounded">
+          <div class="d-flex flex-wrap gap-2">
+            {% for tag in allTags|sort((a, b) => (a.displayName|default(a.value)) <=> (b.displayName|default(b.value))) %}
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-{{ tag in tags ? 'danger' : 'success' }}"
+                data-action="live#action"
+                data-live-tag-id-param="{{ tag.id }}"
+                data-live-action-param="{{ tag in tags ? 'removeTag' : 'addTag' }}"
+              >
+                {{ tag in tags ? '−' : '+' }} {{ tag.displayName|default(tag.value) }}
+              </button>
+            {% endfor %}
+          </div>
+
+          <div class="mt-2">
+            <button
+              type="button"
+              class="btn btn-primary btn-sm"
+              data-action="live#action"
+              data-live-action-param="saveChanges"
+            >
+              Save
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              data-action="live#action"
+              data-live-action-param="toggleTagList"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      {% endblock %}
+    {% endif %}
+  {% endif %}
+</div>
+
+{% block loading_indicator %}
+  <div data-loading="delay|show">
+    <div class="spinner-border spinner-border-sm text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+{% endblock %}
