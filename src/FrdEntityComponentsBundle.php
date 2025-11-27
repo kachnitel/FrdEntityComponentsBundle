@@ -5,6 +5,7 @@ namespace Frd\EntityComponentsBundle;
 use Frd\EntityComponentsBundle\Components\AttachmentManager;
 use Frd\EntityComponentsBundle\Components\CommentsManager;
 use Frd\EntityComponentsBundle\Components\TagManager;
+use Frd\EntityComponentsBundle\Twig\ColorConverterExtension;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
@@ -32,6 +33,11 @@ class FrdEntityComponentsBundle extends AbstractBundle
         $container->register(CommentsManager::class)
             ->setAutowired(true)
             ->setAutoconfigured(true);
+
+        // Register Twig extension
+        $container->register(ColorConverterExtension::class)
+            ->setAutowired(true)
+            ->addTag('twig.extension');
     }
 
     public function prependExtension(ContainerConfigurator $configurator, ContainerBuilder $container): void
