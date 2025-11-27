@@ -36,7 +36,7 @@ final class TagManager
     public bool $showingTags = false;
 
     #[LiveProp(writable: true)]
-    public array $tags = [];
+    public array $tagIds = [];
 
     #[ExposeInTemplate(getter: 'getEntity')]
     private ?TaggableInterface $entity = null;
@@ -66,7 +66,7 @@ final class TagManager
         $this->entityId = $entity->getId();
         $this->tagClass = $tagClass;
         $this->entity = $entity;
-        $this->tags = $entity->getTags()->toArray();
+        $this->tagIds = array_map(fn($tag) => $tag->getId(), $entity->getTags()->toArray());
     }
 
     public function getEntity(): TaggableInterface
@@ -91,30 +91,18 @@ final class TagManager
     #[LiveAction]
     public function addTag(#[LiveArg] int $tagId): void
     {
-        $tag = $this->entityManager->getRepository($this->tagClass)->find($tagId);
-
-        if (!$tag || !$tag instanceof TagInterface) {
-            return;
-        }
-
-        if (!in_array($tag, $this->tags, true)) {
-            $this->tags[] = $tag;
+        if (!in_array($tagId, $this->tagIds, true)) {
+            $this->tagIds[] = $tagId;
         }
     }
 
     #[LiveAction]
     public function removeTag(#[LiveArg] int $tagId): void
     {
-        $tag = $this->entityManager->getRepository($this->tagClass)->find($tagId);
-
-        if (!$tag) {
-            return;
-        }
-
-        $key = array_search($tag, $this->tags, true);
+        $key = array_search($tagId, $this->tagIds, true);
         if ($key !== false) {
-            unset($this->tags[$key]);
-            $this->tags = array_values($this->tags); // Re-index
+            unset($this->tagIds[$key]);
+            $this->tagIds = array_values($this->tagIds); // Re-index
         }
     }
 
@@ -128,6 +116,15 @@ final class TagManager
     public function getAllTags(): array
     {
         return $this->entityManager->getRepository($this->tagClass)->findAll();
+    }
+
+    #[ExposeInTemplate]
+    public function getTags(): array
+    {
+        return array_filter(
+            $this->getAllTags(),
+            fn($tag) => in_array($tag->getId(), $this->tagIds, true)
+        );
     }
 
     #[LiveAction]
@@ -144,8 +141,12 @@ final class TagManager
 
         $entity = $this->getEntity();
         $entity->getTags()->clear();
-        foreach ($this->tags as $tag) {
-            $entity->addTag($tag);
+
+        foreach ($this->tagIds as $tagId) {
+            $tag = $this->entityManager->getRepository($this->tagClass)->find($tagId);
+            if ($tag instanceof TagInterface) {
+                $entity->addTag($tag);
+            }
         }
 
         try {
