@@ -2,6 +2,12 @@
   "type": "symfony-bundle",
   "name": "frd/entity-components-bundle",
   "keywords": ["symfony-ux", "live-component", "tags", "attachments", "entity-management"],
+  "authors": [
+    {
+      "name": "Ondrej Vana",
+      "email": "kachnitel@gmail.com"
+    }
+  ],
   "description": "Reusable Symfony Live Components for entity management (tags, attachments, comments)",
   "license": "MIT",
   "require": {
