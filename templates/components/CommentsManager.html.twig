@@ -34,7 +34,9 @@
                 class="btn btn-sm btn-outline-danger p-0 opacity-25 opacity-hover-100 ms-2"
                 type="button"
                 data-action="live#action"
-                data-live-action-param="deleteComment(id={{ comment.id }}, csrfToken={{ csrf_token('delete-comment-' ~ comment.id) }})"
+                data-live-action-param="deleteComment"
+                data-live-id-param="{{ comment.id }}"
+                data-live-csrf-token-param="{{ csrf_token('delete-comment-' ~ comment.id) }}"
               >
                 <span class="material-icons">{{ comment.id == this.confirmId ? 'delete_forever' : 'delete' }}</span>
                 {{ comment.id == this.confirmId ? 'Confirm' : '' }}

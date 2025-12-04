@@ -36,6 +36,8 @@ class TestKernel extends Kernel
             'test' => true,
             'router' => ['utf8' => true],
             'http_method_override' => false,
+            'csrf_protection' => true,
+            'session' => ['storage_factory_id' => 'session.storage.factory.mock_file'],
         ]);
 
         $container->loadFromExtension('twig', [
