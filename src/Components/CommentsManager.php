@@ -20,7 +20,7 @@ use Symfony\UX\LiveComponent\ComponentWithFormTrait;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Symfony\UX\TwigComponent\Attribute\ExposeInTemplate;
 
-#[AsLiveComponent('FRD:Entity:CommentsManager', template: '@KachnitelEntityComponents/components/CommentsManager.html.twig')]
+#[AsLiveComponent('K:Entity:CommentsManager', template: '@KachnitelEntityComponents/components/CommentsManager.html.twig')]
 final class CommentsManager extends AbstractController
 {
     use DefaultActionTrait;

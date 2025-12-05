@@ -14,7 +14,7 @@ use Symfony\UX\LiveComponent\ComponentToolsTrait;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Symfony\UX\TwigComponent\Attribute\ExposeInTemplate;
 
-#[AsLiveComponent('FRD:Entity:TagManager', template: '@KachnitelEntityComponents/components/TagManager.html.twig')]
+#[AsLiveComponent('K:Entity:TagManager', template: '@KachnitelEntityComponents/components/TagManager.html.twig')]
 final class TagManager
 {
     use DefaultActionTrait;

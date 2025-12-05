@@ -6,13 +6,13 @@ class TagManagerTest extends ComponentTestCase
 {
     public function testTagManagerComponentCanBeCreated(): void
     {
-        $component = $this->factory->get('FRD:Entity:TagManager');
+        $component = $this->factory->get('K:Entity:TagManager');
         $this->assertNotNull($component);
     }
 
     public function testTagManagerHasDefaultProperties(): void
     {
-        $component = $this->factory->get('FRD:Entity:TagManager');
+        $component = $this->factory->get('K:Entity:TagManager');
 
         $this->assertFalse($component->readOnly);
         $this->assertFalse($component->showingTags);

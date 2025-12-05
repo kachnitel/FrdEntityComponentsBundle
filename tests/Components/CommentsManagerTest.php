@@ -14,13 +14,13 @@ class CommentsManagerTest extends ComponentTestCase
 {
     public function testCommentsManagerComponentCanBeCreated(): void
     {
-        $component = $this->factory->get('FRD:Entity:CommentsManager');
+        $component = $this->factory->get('K:Entity:CommentsManager');
         $this->assertNotNull($component);
     }
 
     public function testCommentsManagerHasDefaultProperties(): void
     {
-        $component = $this->factory->get('FRD:Entity:CommentsManager');
+        $component = $this->factory->get('K:Entity:CommentsManager');
 
         $this->assertFalse($component->readOnly);
         $this->assertIsArray($component->errors);
@@ -29,13 +29,13 @@ class CommentsManagerTest extends ComponentTestCase
 
     public function testConfirmIdPropertyExists(): void
     {
-        $component = $this->factory->get('FRD:Entity:CommentsManager');
+        $component = $this->factory->get('K:Entity:CommentsManager');
         $this->assertNull($component->confirmId);
     }
 
     public function testReadOnlyPropertyCanBeSet(): void
     {
-        $component = $this->factory->get('FRD:Entity:CommentsManager');
+        $component = $this->factory->get('K:Entity:CommentsManager');
         $component->readOnly = true;
         $this->assertTrue($component->readOnly);
     }

@@ -23,7 +23,7 @@ use Symfony\UX\LiveComponent\ComponentWithFormTrait;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Symfony\UX\TwigComponent\Attribute\ExposeInTemplate;
 
-#[AsLiveComponent('FRD:Entity:AttachmentManager', template: '@KachnitelEntityComponents/components/AttachmentManager.html.twig')]
+#[AsLiveComponent('K:Entity:AttachmentManager', template: '@KachnitelEntityComponents/components/AttachmentManager.html.twig')]
 final class AttachmentManager extends AbstractController
 {
     use DefaultActionTrait;

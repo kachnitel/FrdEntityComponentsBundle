@@ -63,10 +63,10 @@ class BundleInitializationTest extends KernelTestCase
         $componentFactory = $container->get('ux.twig_component.component_factory');
 
         // Test that components can be created via the factory
-        $tagManager = $componentFactory->get('FRD:Entity:TagManager');
+        $tagManager = $componentFactory->get('K:Entity:TagManager');
         $this->assertNotNull($tagManager);
 
-        $attachmentManager = $componentFactory->get('FRD:Entity:AttachmentManager');
+        $attachmentManager = $componentFactory->get('K:Entity:AttachmentManager');
         $this->assertNotNull($attachmentManager);
     }
 }
