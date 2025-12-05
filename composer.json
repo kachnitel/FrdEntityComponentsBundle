@@ -1,6 +1,6 @@
 {
   "type": "symfony-bundle",
-  "name": "frd/entity-components-bundle",
+  "name": "kachnitel/entity-components-bundle",
   "keywords": ["symfony-ux", "live-component", "tags", "attachments", "entity-management"],
   "authors": [
     {
@@ -18,7 +18,7 @@
     "symfony/form": "^6.4|^7.0",
     "symfony/security-bundle": "^6.4|^7.0",
     "doctrine/orm": "^2.0|^3.0",
-    "frd/color-converter": "dev-master"
+    "kachnitel/color-converter": "0.0.1"
   },
   "require-dev": {
     "phpunit/phpunit": "^11.0",
@@ -29,12 +29,12 @@
   },
   "autoload": {
     "psr-4": {
-      "Frd\\EntityComponentsBundle\\": "src/"
+      "Kachnitel\\EntityComponentsBundle\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "Frd\\EntityComponentsBundle\\Tests\\": "tests/"
+      "Kachnitel\\EntityComponentsBundle\\Tests\\": "tests/"
     }
   },
   "repositories": [

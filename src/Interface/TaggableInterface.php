@@ -1,6 +1,6 @@
 <?php
 
-namespace Frd\EntityComponentsBundle\Interface;
+namespace Kachnitel\EntityComponentsBundle\Interface;
 
 use Doctrine\Common\Collections\Collection;
 

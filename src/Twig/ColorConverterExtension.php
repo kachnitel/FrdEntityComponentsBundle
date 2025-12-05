@@ -1,8 +1,8 @@
 <?php
 
-namespace Frd\EntityComponentsBundle\Twig;
+namespace Kachnitel\EntityComponentsBundle\Twig;
 
-use Frd\ColorConverter\ColorConverter;
+use Kachnitel\ColorConverter\ColorConverter;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
 
@@ -10,7 +10,7 @@ use Twig\TwigFilter;
  * Twig extension wrapper for the FRD Color Converter library.
  *
  * Provides Twig filters for color conversion and luminance detection.
- * The actual conversion logic is delegated to the frd/color-converter library.
+ * The actual conversion logic is delegated to the kachnitel/color-converter library.
  */
 class ColorConverterExtension extends AbstractExtension
 {

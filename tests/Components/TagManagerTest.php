@@ -1,6 +1,6 @@
 <?php
 
-namespace Frd\EntityComponentsBundle\Tests\Components;
+namespace Kachnitel\EntityComponentsBundle\Tests\Components;
 
 class TagManagerTest extends ComponentTestCase
 {

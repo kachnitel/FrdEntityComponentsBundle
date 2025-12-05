@@ -2,7 +2,7 @@
 
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
-use Frd\EntityComponentsBundle\Twig\ColorConverterExtension;
+use Kachnitel\EntityComponentsBundle\Twig\ColorConverterExtension;
 
 return static function (ContainerConfigurator $container): void {
     $services = $container->services()
@@ -11,7 +11,7 @@ return static function (ContainerConfigurator $container): void {
             ->autoconfigure();
 
     // Register all components from the Components directory
-    $services->load('Frd\\EntityComponentsBundle\\Components\\', dirname(__DIR__) . '/src/Components');
+    $services->load('Kachnitel\\EntityComponentsBundle\\Components\\', dirname(__DIR__) . '/src/Components');
 
     // Register Twig extensions explicitly
     $services->set(ColorConverterExtension::class)

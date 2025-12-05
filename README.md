@@ -13,7 +13,7 @@ Reusable Symfony Live Components for entity management. Provides tag and attachm
 ## Installation
 
 ```bash
-composer require frd/entity-components-bundle
+composer require kachnitel/entity-components-bundle
 ```
 
 ## Quick Start
@@ -21,7 +21,7 @@ composer require frd/entity-components-bundle
 ### 1. Create a Tag Entity
 
 ```php
-use Frd\EntityComponentsBundle\Interface\TagInterface;
+use Kachnitel\EntityComponentsBundle\Interface\TagInterface;
 
 #[ORM\Entity]
 class Tag implements TagInterface
@@ -45,8 +45,8 @@ class Tag implements TagInterface
 ### 2. Make Your Entity Taggable
 
 ```php
-use Frd\EntityComponentsBundle\Interface\TaggableInterface;
-use Frd\EntityComponentsBundle\Trait\TaggableTrait;
+use Kachnitel\EntityComponentsBundle\Interface\TaggableInterface;
+use Kachnitel\EntityComponentsBundle\Trait\TaggableTrait;
 
 #[ORM\Entity]
 class Product implements TaggableInterface
@@ -77,7 +77,7 @@ class Product implements TaggableInterface
 ### 1. Create an Attachment Entity
 
 ```php
-use Frd\EntityComponentsBundle\Interface\AttachmentInterface;
+use Kachnitel\EntityComponentsBundle\Interface\AttachmentInterface;
 
 #[ORM\Entity]
 class UploadedFile implements AttachmentInterface
@@ -101,8 +101,8 @@ class UploadedFile implements AttachmentInterface
 ### 2. Make Your Entity Attachable
 
 ```php
-use Frd\EntityComponentsBundle\Interface\AttachableInterface;
-use Frd\EntityComponentsBundle\Trait\AttachableTrait;
+use Kachnitel\EntityComponentsBundle\Interface\AttachableInterface;
+use Kachnitel\EntityComponentsBundle\Trait\AttachableTrait;
 
 #[ORM\Entity]
 class Product implements AttachableInterface
@@ -124,7 +124,7 @@ class Product implements AttachableInterface
 ### 3. Implement FileHandlerInterface
 
 ```php
-use Frd\EntityComponentsBundle\Interface\FileHandlerInterface;
+use Kachnitel\EntityComponentsBundle\Interface\FileHandlerInterface;
 
 class LocalStorageHandler implements FileHandlerInterface
 {
@@ -217,8 +217,8 @@ Live Component for managing file attachments on entities.
 You must implement and register a `FileHandlerInterface` service:
 
 ```php
-use Frd\EntityComponentsBundle\Interface\FileHandlerInterface;
-use Frd\EntityComponentsBundle\Interface\AttachmentInterface;
+use Kachnitel\EntityComponentsBundle\Interface\FileHandlerInterface;
+use Kachnitel\EntityComponentsBundle\Interface\AttachmentInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class LocalStorageHandler implements FileHandlerInterface

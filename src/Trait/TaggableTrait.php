@@ -1,10 +1,10 @@
 <?php
 
-namespace Frd\EntityComponentsBundle\Trait;
+namespace Kachnitel\EntityComponentsBundle\Trait;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Frd\EntityComponentsBundle\Interface\TagInterface;
+use Kachnitel\EntityComponentsBundle\Interface\TagInterface;
 
 /**
  * Trait for entities that support tagging

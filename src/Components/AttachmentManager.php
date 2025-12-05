@@ -1,12 +1,12 @@
 <?php
 
-namespace Frd\EntityComponentsBundle\Components;
+namespace Kachnitel\EntityComponentsBundle\Components;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
-use Frd\EntityComponentsBundle\Interface\AttachableInterface;
-use Frd\EntityComponentsBundle\Interface\AttachmentInterface;
-use Frd\EntityComponentsBundle\Interface\FileHandlerInterface;
+use Kachnitel\EntityComponentsBundle\Interface\AttachableInterface;
+use Kachnitel\EntityComponentsBundle\Interface\AttachmentInterface;
+use Kachnitel\EntityComponentsBundle\Interface\FileHandlerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -23,7 +23,7 @@ use Symfony\UX\LiveComponent\ComponentWithFormTrait;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Symfony\UX\TwigComponent\Attribute\ExposeInTemplate;
 
-#[AsLiveComponent('FRD:Entity:AttachmentManager', template: '@FrdEntityComponents/components/AttachmentManager.html.twig')]
+#[AsLiveComponent('FRD:Entity:AttachmentManager', template: '@KachnitelEntityComponents/components/AttachmentManager.html.twig')]
 final class AttachmentManager extends AbstractController
 {
     use DefaultActionTrait;

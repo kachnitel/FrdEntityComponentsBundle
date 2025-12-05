@@ -1,8 +1,8 @@
 <?php
 
-namespace Frd\EntityComponentsBundle\Tests\Components;
+namespace Kachnitel\EntityComponentsBundle\Tests\Components;
 
-use Frd\EntityComponentsBundle\Tests\TestKernel;
+use Kachnitel\EntityComponentsBundle\Tests\TestKernel;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\UX\TwigComponent\ComponentFactory;
 
@@ -22,7 +22,7 @@ abstract class ComponentTestCase extends KernelTestCase
 
         // Set synthetic services
         $container->set('doctrine.orm.entity_manager', $this->createMock(\Doctrine\ORM\EntityManagerInterface::class));
-        $container->set('test.file_handler', $this->createMock(\Frd\EntityComponentsBundle\Interface\FileHandlerInterface::class));
+        $container->set('test.file_handler', $this->createMock(\Kachnitel\EntityComponentsBundle\Interface\FileHandlerInterface::class));
         $container->set('test.logger', $this->createMock(\Psr\Log\LoggerInterface::class));
         $container->set('test.security', $this->createMock(\Symfony\Bundle\SecurityBundle\Security::class));
 

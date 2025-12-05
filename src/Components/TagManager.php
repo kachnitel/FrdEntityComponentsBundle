@@ -1,10 +1,10 @@
 <?php
 
-namespace Frd\EntityComponentsBundle\Components;
+namespace Kachnitel\EntityComponentsBundle\Components;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Frd\EntityComponentsBundle\Interface\TaggableInterface;
-use Frd\EntityComponentsBundle\Interface\TagInterface;
+use Kachnitel\EntityComponentsBundle\Interface\TaggableInterface;
+use Kachnitel\EntityComponentsBundle\Interface\TagInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
@@ -14,7 +14,7 @@ use Symfony\UX\LiveComponent\ComponentToolsTrait;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Symfony\UX\TwigComponent\Attribute\ExposeInTemplate;
 
-#[AsLiveComponent('FRD:Entity:TagManager', template: '@FrdEntityComponents/components/TagManager.html.twig')]
+#[AsLiveComponent('FRD:Entity:TagManager', template: '@KachnitelEntityComponents/components/TagManager.html.twig')]
 final class TagManager
 {
     use DefaultActionTrait;

@@ -1,11 +1,11 @@
 <?php
 
-namespace Frd\EntityComponentsBundle\Components;
+namespace Kachnitel\EntityComponentsBundle\Components;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
-use Frd\EntityComponentsBundle\Interface\CommentableInterface;
-use Frd\EntityComponentsBundle\Interface\CommentInterface;
+use Kachnitel\EntityComponentsBundle\Interface\CommentableInterface;
+use Kachnitel\EntityComponentsBundle\Interface\CommentInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
@@ -20,7 +20,7 @@ use Symfony\UX\LiveComponent\ComponentWithFormTrait;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Symfony\UX\TwigComponent\Attribute\ExposeInTemplate;
 
-#[AsLiveComponent('FRD:Entity:CommentsManager', template: '@FrdEntityComponents/components/CommentsManager.html.twig')]
+#[AsLiveComponent('FRD:Entity:CommentsManager', template: '@KachnitelEntityComponents/components/CommentsManager.html.twig')]
 final class CommentsManager extends AbstractController
 {
     use DefaultActionTrait;

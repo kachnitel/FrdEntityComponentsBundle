@@ -1,6 +1,6 @@
 <?php
 
-namespace Frd\EntityComponentsBundle\Tests;
+namespace Kachnitel\EntityComponentsBundle\Tests;
 
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\UX\TwigComponent\ComponentFactory;
@@ -20,7 +20,7 @@ class BundleInitializationTest extends KernelTestCase
 
         // Set synthetic services
         $container->set('doctrine.orm.entity_manager', $this->createMock(\Doctrine\ORM\EntityManagerInterface::class));
-        $container->set('test.file_handler', $this->createMock(\Frd\EntityComponentsBundle\Interface\FileHandlerInterface::class));
+        $container->set('test.file_handler', $this->createMock(\Kachnitel\EntityComponentsBundle\Interface\FileHandlerInterface::class));
         $container->set('test.logger', $this->createMock(\Psr\Log\LoggerInterface::class));
     }
 
@@ -30,7 +30,7 @@ class BundleInitializationTest extends KernelTestCase
 
         $bundles = self::$kernel->getBundles();
 
-        $this->assertArrayHasKey('FrdEntityComponentsBundle', $bundles);
+        $this->assertArrayHasKey('KachnitelEntityComponentsBundle', $bundles);
     }
 
     public function testTwigComponentServiceIsAvailable(): void
@@ -56,8 +56,8 @@ class BundleInitializationTest extends KernelTestCase
         $container = self::getContainer();
 
         // Test that component services exist in the container
-        $this->assertTrue($container->has('Frd\EntityComponentsBundle\Components\TagManager'));
-        $this->assertTrue($container->has('Frd\EntityComponentsBundle\Components\AttachmentManager'));
+        $this->assertTrue($container->has('Kachnitel\EntityComponentsBundle\Components\TagManager'));
+        $this->assertTrue($container->has('Kachnitel\EntityComponentsBundle\Components\AttachmentManager'));
 
         /** @var ComponentFactory $componentFactory */
         $componentFactory = $container->get('ux.twig_component.component_factory');

@@ -1,16 +1,16 @@
 <?php
 
-namespace Frd\EntityComponentsBundle;
+namespace Kachnitel\EntityComponentsBundle;
 
-use Frd\EntityComponentsBundle\Components\AttachmentManager;
-use Frd\EntityComponentsBundle\Components\CommentsManager;
-use Frd\EntityComponentsBundle\Components\TagManager;
-use Frd\EntityComponentsBundle\Twig\ColorConverterExtension;
+use Kachnitel\EntityComponentsBundle\Components\AttachmentManager;
+use Kachnitel\EntityComponentsBundle\Components\CommentsManager;
+use Kachnitel\EntityComponentsBundle\Components\TagManager;
+use Kachnitel\EntityComponentsBundle\Twig\ColorConverterExtension;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 
-class FrdEntityComponentsBundle extends AbstractBundle
+class KachnitelEntityComponentsBundle extends AbstractBundle
 {
     public function getPath(): string
     {
@@ -45,7 +45,7 @@ class FrdEntityComponentsBundle extends AbstractBundle
         // Register Twig paths
         $container->prependExtensionConfig('twig', [
             'paths' => [
-                $this->getPath() . '/templates' => 'FrdEntityComponents',
+                $this->getPath() . '/templates' => 'KachnitelEntityComponents',
             ],
         ]);
     }

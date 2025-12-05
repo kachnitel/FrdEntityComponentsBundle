@@ -1,8 +1,8 @@
 <?php
 
-namespace Frd\EntityComponentsBundle\Tests;
+namespace Kachnitel\EntityComponentsBundle\Tests;
 
-use Frd\EntityComponentsBundle\FrdEntityComponentsBundle;
+use Kachnitel\EntityComponentsBundle\KachnitelEntityComponentsBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Bundle\TwigBundle\TwigBundle;
@@ -25,7 +25,7 @@ class TestKernel extends Kernel
             new TwigComponentBundle(),
             new LiveComponentBundle(),
             new StimulusBundle(),
-            new FrdEntityComponentsBundle(),
+            new KachnitelEntityComponentsBundle(),
         ];
     }
 
@@ -52,10 +52,10 @@ class TestKernel extends Kernel
         $container->setAlias(\Doctrine\ORM\EntityManagerInterface::class, 'doctrine.orm.entity_manager');
 
         // Mock FileHandlerInterface for AttachmentManager
-        $container->register('test.file_handler', \Frd\EntityComponentsBundle\Interface\FileHandlerInterface::class)
+        $container->register('test.file_handler', \Kachnitel\EntityComponentsBundle\Interface\FileHandlerInterface::class)
             ->setSynthetic(true);
 
-        $container->setAlias(\Frd\EntityComponentsBundle\Interface\FileHandlerInterface::class, 'test.file_handler');
+        $container->setAlias(\Kachnitel\EntityComponentsBundle\Interface\FileHandlerInterface::class, 'test.file_handler');
 
         // Mock LoggerInterface
         $container->register('test.logger', \Psr\Log\LoggerInterface::class)

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Frd\EntityComponentsBundle\Tests\Components;
+namespace Kachnitel\EntityComponentsBundle\Tests\Components;
 
 use Doctrine\Common\Collections\ArrayCollection;
-use Frd\EntityComponentsBundle\Interface\CommentableInterface;
-use Frd\EntityComponentsBundle\Interface\CommentInterface;
+use Kachnitel\EntityComponentsBundle\Interface\CommentableInterface;
+use Kachnitel\EntityComponentsBundle\Interface\CommentInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use Symfony\Component\Security\Core\User\UserInterface;
 

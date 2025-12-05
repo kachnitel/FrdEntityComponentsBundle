@@ -1,10 +1,10 @@
 <?php
 
-namespace Frd\EntityComponentsBundle\Trait;
+namespace Kachnitel\EntityComponentsBundle\Trait;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Frd\EntityComponentsBundle\Interface\AttachmentInterface;
+use Kachnitel\EntityComponentsBundle\Interface\AttachmentInterface;
 
 trait AttachableTrait
 {

@@ -1,4 +1,4 @@
-<div{{ attributes.defaults({ class: 'frd-tag-manager' }) }}>
+<div{{ attributes.defaults({ class: 'kachnitel-tag-manager' }) }}>
   {% block tag_list %}
     {% for tag in this.tags %}
       {% block tag_badge %}
@@ -40,7 +40,7 @@
 
     {% if this.showingTags %}
       {% block tag_selector %}
-        <div class="frd-tag-selector mt-2 p-2 border rounded">
+        <div class="kachnitel-tag-selector mt-2 p-2 border rounded">
           <div class="d-flex flex-wrap gap-2">
             {% for tag in allTags|sort((a, b) => (a.displayName|default(a.value)) <=> (b.displayName|default(b.value))) %}
               {% set bgColor = '#' ~ tag.categoryColor %}
@@ -83,7 +83,7 @@
 </div>
 
 {% macro placeholder(props) %}
-  <div class="frd-tag-manager">
+  <div class="kachnitel-tag-manager">
     <div class="spinner-border spinner-border-sm text-primary" role="status">
       <span class="visually-hidden">Loading...</span>
     </div>
