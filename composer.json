@@ -36,11 +36,5 @@
     "psr-4": {
       "Kachnitel\\EntityComponentsBundle\\Tests\\": "tests/"
     }
-  },
-  "repositories": [
-    {
-      "type": "path",
-      "url": "../frd-color-converter"
-    }
-  ]
+  }
 }
