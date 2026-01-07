@@ -9,7 +9,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use ReflectionNamedType;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\PropertyInfo\PropertyInfoExtractorInterface;
-use Symfony\Component\TypeInfo\Type\ObjectType;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
@@ -224,15 +223,17 @@ final class SelectRelationship
             return;
         }
 
-        $type = $this->propertyInfo->getType($this->entityClass, $this->property);
+        $types = $this->propertyInfo->getTypes($this->entityClass, $this->property);
 
-        if ($type === null) {
+        if ($types === null || $types === []) {
             $this->resolveFromReflection($this->entityClass);
             return;
         }
 
-        if ($type instanceof ObjectType) {
-            $className = $type->getClassName();
+        $type = $types[0];
+        $className = $type->getClassName();
+
+        if ($className !== null) {
             $this->targetClass = $className;
             $this->isEnum = enum_exists($className);
         }

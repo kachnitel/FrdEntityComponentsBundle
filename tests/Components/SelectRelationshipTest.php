@@ -10,7 +10,7 @@ use Kachnitel\EntityComponentsBundle\Components\SelectRelationship;
 use PHPUnit\Framework\MockObject\MockObject;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\PropertyInfo\PropertyInfoExtractorInterface;
-use Symfony\Component\TypeInfo\Type\ObjectType;
+use Symfony\Component\PropertyInfo\Type;
 
 class SelectRelationshipTest extends ComponentTestCase
 {
@@ -69,8 +69,8 @@ class SelectRelationshipTest extends ComponentTestCase
 
         /** @var PropertyInfoExtractorInterface&MockObject $propertyInfo */
         $propertyInfo = $this->createMock(PropertyInfoExtractorInterface::class);
-        $propertyInfo->method('getType')
-            ->willReturn(new ObjectType(TestRelatedEntity::class));
+        $propertyInfo->method('getTypes')
+            ->willReturn([new Type(Type::BUILTIN_TYPE_OBJECT, false, TestRelatedEntity::class)]);
 
         /** @var EntityManagerInterface&MockObject $em */
         $em = $this->createMock(EntityManagerInterface::class);
@@ -100,8 +100,8 @@ class SelectRelationshipTest extends ComponentTestCase
 
         /** @var PropertyInfoExtractorInterface&MockObject $propertyInfo */
         $propertyInfo = $this->createMock(PropertyInfoExtractorInterface::class);
-        $propertyInfo->method('getType')
-            ->willReturn(new ObjectType(TestRelatedEntity::class));
+        $propertyInfo->method('getTypes')
+            ->willReturn([new Type(Type::BUILTIN_TYPE_OBJECT, false, TestRelatedEntity::class)]);
 
         /** @var EntityManagerInterface&MockObject $em */
         $em = $this->createMock(EntityManagerInterface::class);
@@ -131,8 +131,8 @@ class SelectRelationshipTest extends ComponentTestCase
 
         /** @var PropertyInfoExtractorInterface&MockObject $propertyInfo */
         $propertyInfo = $this->createMock(PropertyInfoExtractorInterface::class);
-        $propertyInfo->method('getType')
-            ->willReturn(new ObjectType(TestStatus::class));
+        $propertyInfo->method('getTypes')
+            ->willReturn([new Type(Type::BUILTIN_TYPE_OBJECT, false, TestStatus::class)]);
 
         /** @var EntityManagerInterface&MockObject $em */
         $em = $this->createMock(EntityManagerInterface::class);
@@ -159,8 +159,8 @@ class SelectRelationshipTest extends ComponentTestCase
 
         /** @var PropertyInfoExtractorInterface&MockObject $propertyInfo */
         $propertyInfo = $this->createMock(PropertyInfoExtractorInterface::class);
-        $propertyInfo->method('getType')
-            ->willReturn(new ObjectType(TestStatus::class));
+        $propertyInfo->method('getTypes')
+            ->willReturn([new Type(Type::BUILTIN_TYPE_OBJECT, false, TestStatus::class)]);
 
         /** @var EntityManagerInterface&MockObject $em */
         $em = $this->createMock(EntityManagerInterface::class);
@@ -192,8 +192,8 @@ class SelectRelationshipTest extends ComponentTestCase
 
         /** @var PropertyInfoExtractorInterface&MockObject $propertyInfo */
         $propertyInfo = $this->createMock(PropertyInfoExtractorInterface::class);
-        $propertyInfo->method('getType')
-            ->willReturn(new ObjectType(TestRelatedEntity::class));
+        $propertyInfo->method('getTypes')
+            ->willReturn([new Type(Type::BUILTIN_TYPE_OBJECT, false, TestRelatedEntity::class)]);
 
         /** @var EntityRepository<TestRelatedEntity>&MockObject $repository */
         $repository = $this->createMock(EntityRepository::class);
@@ -230,8 +230,8 @@ class SelectRelationshipTest extends ComponentTestCase
 
         /** @var PropertyInfoExtractorInterface&MockObject $propertyInfo */
         $propertyInfo = $this->createMock(PropertyInfoExtractorInterface::class);
-        $propertyInfo->method('getType')
-            ->willReturn(new ObjectType(TestRelatedEntity::class));
+        $propertyInfo->method('getTypes')
+            ->willReturn([new Type(Type::BUILTIN_TYPE_OBJECT, false, TestRelatedEntity::class)]);
 
         /** @var EntityRepository<TestRelatedEntity>&MockObject $repository */
         $repository = $this->createMock(EntityRepository::class);
@@ -270,8 +270,8 @@ class SelectRelationshipTest extends ComponentTestCase
 
         /** @var PropertyInfoExtractorInterface&MockObject $propertyInfo */
         $propertyInfo = $this->createMock(PropertyInfoExtractorInterface::class);
-        $propertyInfo->method('getType')
-            ->willReturn(new ObjectType(TestRelatedEntity::class));
+        $propertyInfo->method('getTypes')
+            ->willReturn([new Type(Type::BUILTIN_TYPE_OBJECT, false, TestRelatedEntity::class)]);
 
         /** @var EntityRepository<TestRelatedEntity>&MockObject $repository */
         $repository = $this->getMockBuilder(EntityRepository::class)
@@ -409,8 +409,8 @@ class SelectRelationshipTest extends ComponentTestCase
 
         /** @var PropertyInfoExtractorInterface&MockObject $propertyInfo */
         $propertyInfo = $this->createMock(PropertyInfoExtractorInterface::class);
-        $propertyInfo->method('getType')
-            ->willReturn(new ObjectType(TestRelatedEntity::class));
+        $propertyInfo->method('getTypes')
+            ->willReturn([new Type(Type::BUILTIN_TYPE_OBJECT, false, TestRelatedEntity::class)]);
 
         /** @var EntityManagerInterface&MockObject $em */
         $em = $this->createMock(EntityManagerInterface::class);
@@ -442,8 +442,8 @@ class SelectRelationshipTest extends ComponentTestCase
 
         /** @var PropertyInfoExtractorInterface&MockObject $propertyInfo */
         $propertyInfo = $this->createMock(PropertyInfoExtractorInterface::class);
-        $propertyInfo->method('getType')
-            ->willReturn(new ObjectType(TestRelatedEntity::class));
+        $propertyInfo->method('getTypes')
+            ->willReturn([new Type(Type::BUILTIN_TYPE_OBJECT, false, TestRelatedEntity::class)]);
 
         /** @var EntityManagerInterface&MockObject $em */
         $em = $this->createMock(EntityManagerInterface::class);
@@ -470,8 +470,8 @@ class SelectRelationshipTest extends ComponentTestCase
 
         /** @var PropertyInfoExtractorInterface&MockObject $propertyInfo */
         $propertyInfo = $this->createMock(PropertyInfoExtractorInterface::class);
-        $propertyInfo->method('getType')
-            ->willReturn(new ObjectType(TestStatus::class));
+        $propertyInfo->method('getTypes')
+            ->willReturn([new Type(Type::BUILTIN_TYPE_OBJECT, false, TestStatus::class)]);
 
         /** @var EntityManagerInterface&MockObject $em */
         $em = $this->createMock(EntityManagerInterface::class);
@@ -498,8 +498,8 @@ class SelectRelationshipTest extends ComponentTestCase
 
         /** @var PropertyInfoExtractorInterface&MockObject $propertyInfo */
         $propertyInfo = $this->createMock(PropertyInfoExtractorInterface::class);
-        $propertyInfo->method('getType')
-            ->willReturn(new ObjectType(TestRelatedEntity::class));
+        $propertyInfo->method('getTypes')
+            ->willReturn([new Type(Type::BUILTIN_TYPE_OBJECT, false, TestRelatedEntity::class)]);
 
         /** @var EntityManagerInterface&MockObject $em */
         $em = $this->createMock(EntityManagerInterface::class);
@@ -526,8 +526,8 @@ class SelectRelationshipTest extends ComponentTestCase
 
         /** @var PropertyInfoExtractorInterface&MockObject $propertyInfo */
         $propertyInfo = $this->createMock(PropertyInfoExtractorInterface::class);
-        $propertyInfo->method('getType')
-            ->willReturn(new ObjectType(TestRelatedEntity::class));
+        $propertyInfo->method('getTypes')
+            ->willReturn([new Type(Type::BUILTIN_TYPE_OBJECT, false, TestRelatedEntity::class)]);
 
         /** @var EntityManagerInterface&MockObject $em */
         $em = $this->createMock(EntityManagerInterface::class);
@@ -562,8 +562,8 @@ class SelectRelationshipTest extends ComponentTestCase
 
         /** @var PropertyInfoExtractorInterface&MockObject $propertyInfo */
         $propertyInfo = $this->createMock(PropertyInfoExtractorInterface::class);
-        $propertyInfo->method('getType')
-            ->willReturn(new ObjectType(TestRelatedEntity::class));
+        $propertyInfo->method('getTypes')
+            ->willReturn([new Type(Type::BUILTIN_TYPE_OBJECT, false, TestRelatedEntity::class)]);
 
         /** @var EntityManagerInterface&MockObject $em */
         $em = $this->createMock(EntityManagerInterface::class);
@@ -591,8 +591,8 @@ class SelectRelationshipTest extends ComponentTestCase
 
         /** @var PropertyInfoExtractorInterface&MockObject $propertyInfo */
         $propertyInfo = $this->createMock(PropertyInfoExtractorInterface::class);
-        $propertyInfo->method('getType')
-            ->willReturn(new ObjectType(TestRelatedEntity::class));
+        $propertyInfo->method('getTypes')
+            ->willReturn([new Type(Type::BUILTIN_TYPE_OBJECT, false, TestRelatedEntity::class)]);
 
         /** @var EntityManagerInterface&MockObject $em */
         $em = $this->createMock(EntityManagerInterface::class);
@@ -627,8 +627,8 @@ class SelectRelationshipTest extends ComponentTestCase
 
         /** @var PropertyInfoExtractorInterface&MockObject $propertyInfo */
         $propertyInfo = $this->createMock(PropertyInfoExtractorInterface::class);
-        $propertyInfo->method('getType')
-            ->willReturn(new ObjectType(TestRelatedEntity::class));
+        $propertyInfo->method('getTypes')
+            ->willReturn([new Type(Type::BUILTIN_TYPE_OBJECT, false, TestRelatedEntity::class)]);
 
         /** @var EntityManagerInterface&MockObject $em */
         $em = $this->createMock(EntityManagerInterface::class);
@@ -659,8 +659,8 @@ class SelectRelationshipTest extends ComponentTestCase
 
         /** @var PropertyInfoExtractorInterface&MockObject $propertyInfo */
         $propertyInfo = $this->createMock(PropertyInfoExtractorInterface::class);
-        $propertyInfo->method('getType')
-            ->willReturn(new ObjectType(TestStatus::class));
+        $propertyInfo->method('getTypes')
+            ->willReturn([new Type(Type::BUILTIN_TYPE_OBJECT, false, TestStatus::class)]);
 
         /** @var EntityManagerInterface&MockObject $em */
         $em = $this->createMock(EntityManagerInterface::class);
@@ -713,7 +713,7 @@ class SelectRelationshipTest extends ComponentTestCase
 
         /** @var PropertyInfoExtractorInterface&MockObject $propertyInfo */
         $propertyInfo = $this->createMock(PropertyInfoExtractorInterface::class);
-        $propertyInfo->method('getType')->willReturn(null);
+        $propertyInfo->method('getTypes')->willReturn(null);
 
         /** @var EntityManagerInterface&MockObject $em */
         $em = $this->createMock(EntityManagerInterface::class);
@@ -740,8 +740,8 @@ class SelectRelationshipTest extends ComponentTestCase
 
         /** @var PropertyInfoExtractorInterface&MockObject $propertyInfo */
         $propertyInfo = $this->createMock(PropertyInfoExtractorInterface::class);
-        $propertyInfo->method('getType')
-            ->willReturn(new ObjectType(TestRelatedEntity::class));
+        $propertyInfo->method('getTypes')
+            ->willReturn([new Type(Type::BUILTIN_TYPE_OBJECT, false, TestRelatedEntity::class)]);
 
         /** @var EntityManagerInterface&MockObject $em */
         $em = $this->createMock(EntityManagerInterface::class);
@@ -768,7 +768,7 @@ class SelectRelationshipTest extends ComponentTestCase
 
         /** @var PropertyInfoExtractorInterface&MockObject $propertyInfo */
         $propertyInfo = $this->createMock(PropertyInfoExtractorInterface::class);
-        $propertyInfo->method('getType')->willReturn(null);
+        $propertyInfo->method('getTypes')->willReturn(null);
 
         /** @var EntityRepository<TestRelatedEntity>&MockObject $repository */
         $repository = $this->createMock(EntityRepository::class);
@@ -802,8 +802,8 @@ class SelectRelationshipTest extends ComponentTestCase
 
         /** @var PropertyInfoExtractorInterface&MockObject $propertyInfo */
         $propertyInfo = $this->createMock(PropertyInfoExtractorInterface::class);
-        $propertyInfo->method('getType')
-            ->willReturn(new ObjectType(TestRelatedEntity::class));
+        $propertyInfo->method('getTypes')
+            ->willReturn([new Type(Type::BUILTIN_TYPE_OBJECT, false, TestRelatedEntity::class)]);
 
         /** @var EntityManagerInterface&MockObject $em */
         $em = $this->createMock(EntityManagerInterface::class);
