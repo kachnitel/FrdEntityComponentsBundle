@@ -84,11 +84,11 @@ class TestKernel extends Kernel
 
     public function getCacheDir(): string
     {
-        return sys_get_temp_dir() . '/frd_entity_components_bundle/cache/' . spl_object_hash($this);
+        return sys_get_temp_dir() . '/kachnitel_entity_components_bundle/cache/' . spl_object_hash($this);
     }
 
     public function getLogDir(): string
     {
-        return sys_get_temp_dir() . '/frd_entity_components_bundle/logs';
+        return sys_get_temp_dir() . '/kachnitel_entity_components_bundle/logs';
     }
 }

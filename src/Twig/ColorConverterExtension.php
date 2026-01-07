@@ -7,7 +7,7 @@ use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
 
 /**
- * Twig extension wrapper for the FRD Color Converter library.
+ * Twig extension wrapper for the Kachnitel Color Converter library.
  *
  * Provides Twig filters for color conversion and luminance detection.
  * The actual conversion logic is delegated to the kachnitel/color-converter library.

@@ -1,4 +1,4 @@
-# FRD Entity Components Bundle
+# Kachnitel Entity Components Bundle
 
 Reusable Symfony Live Components for entity management. Provides tag and attachment management components that work with any Doctrine entity.
 
