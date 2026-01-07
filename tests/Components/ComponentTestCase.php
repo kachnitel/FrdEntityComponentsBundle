@@ -25,6 +25,8 @@ abstract class ComponentTestCase extends KernelTestCase
         $container->set('test.file_handler', $this->createMock(\Kachnitel\EntityComponentsBundle\Interface\FileHandlerInterface::class));
         $container->set('test.logger', $this->createMock(\Psr\Log\LoggerInterface::class));
         $container->set('test.security', $this->createMock(\Symfony\Bundle\SecurityBundle\Security::class));
+        $container->set('test.property_info', $this->createMock(\Symfony\Component\PropertyInfo\PropertyInfoExtractorInterface::class));
+        $container->set('test.property_accessor', $this->createMock(\Symfony\Component\PropertyAccess\PropertyAccessorInterface::class));
 
         $this->factory = $container->get('ux.twig_component.component_factory');
     }

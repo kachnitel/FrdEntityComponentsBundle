@@ -6,6 +6,7 @@ Reusable Symfony Live Components for entity management. Provides tag and attachm
 
 - **TagManager** - Live Component for managing tags on any entity
 - **AttachmentManager** - Live Component for file uploads and attachments
+- **SelectRelationship** - Live Component for editing entity relationships and enums inline
 - **Generic interfaces** - Work with your own Tag/Attachment entities
 - **Reusable traits** - Easy implementation for entities
 - **Framework-agnostic design** - Minimal dependencies
@@ -231,6 +232,83 @@ class LocalStorageHandler implements FileHandlerInterface
     public function deleteFile(AttachmentInterface $attachment): void
     {
         // Delete the file from storage
+    }
+}
+```
+
+### SelectRelationship
+
+Live Component for inline editing of entity relationships and enum properties. Automatically detects whether the target property is an Entity or Enum and loads appropriate options.
+
+**Props:**
+- `entity` (object) - The entity containing the property to edit (required)
+- `property` (string) - The property name to edit (required)
+- `role` (string) - Role required to show the editable select (optional)
+- `viewRole` (string) - Role required to show static display when edit role not granted (optional)
+- `placeholder` (string) - Placeholder text for empty option (default: '-')
+- `displayProperty` (string) - Property to display for options (default: 'name')
+- `valueProperty` (string) - Property to use as value (default: 'id')
+- `filter` (array) - Simple criteria for findBy() e.g., `{ active: true }` (optional)
+- `repositoryMethod` (string) - Custom repository method name e.g., 'findByRoles' (optional)
+- `repositoryArgs` (array) - Arguments for custom repository method (optional)
+- `disableEmpty` (bool) - Disable selection of empty option (default: false)
+- `disabled` (bool) - Force disabled state (default: false)
+- `label` (string) - Optional label text
+
+**Usage:**
+```twig
+{# Basic usage with entity relationship #}
+<twig:K:Entity:SelectRelationship
+    :entity="order"
+    property="region"
+    role="ROLE_ORDER_REGION_EDIT"
+    placeholder="- Select Region -"
+    select:class="form-select"
+/>
+
+{# With enum property #}
+<twig:K:Entity:SelectRelationship
+    :entity="order"
+    property="status"
+    role="ROLE_ORDER_STATUS_EDIT"
+/>
+
+{# With simple filter #}
+<twig:K:Entity:SelectRelationship
+    :entity="order"
+    property="assignedTo"
+    :filter="{ active: true }"
+    displayProperty="fullName"
+/>
+
+{# With custom repository method #}
+<twig:K:Entity:SelectRelationship
+    :entity="order"
+    property="assignedTo"
+    repositoryMethod="findByRoles"
+    :repositoryArgs="[['ROLE_TERRITORY_MANAGER']]"
+/>
+```
+
+**Nested Attributes:**
+- `select:*` - Attributes for the `<select>` element (e.g., `select:class="compact"`)
+- `static:*` - Attributes for the static display `<span>` (e.g., `static:class="text-muted"`)
+
+**Enum Support:**
+Enums are automatically detected. If your enum implements a `displayValue()` method, it will be used for the option label:
+
+```php
+enum OrderStatus: string
+{
+    case Pending = 'pending';
+    case Shipped = 'shipped';
+
+    public function displayValue(): string
+    {
+        return match ($this) {
+            self::Pending => 'Awaiting Shipment',
+            self::Shipped => 'Shipped',
+        };
     }
 }
 ```

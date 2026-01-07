@@ -68,6 +68,18 @@ class TestKernel extends Kernel
             ->setSynthetic(true);
 
         $container->setAlias(\Symfony\Bundle\SecurityBundle\Security::class, 'test.security');
+
+        // Mock PropertyInfoExtractorInterface for SelectRelationship
+        $container->register('test.property_info', \Symfony\Component\PropertyInfo\PropertyInfoExtractorInterface::class)
+            ->setSynthetic(true);
+
+        $container->setAlias(\Symfony\Component\PropertyInfo\PropertyInfoExtractorInterface::class, 'test.property_info');
+
+        // Mock PropertyAccessorInterface for SelectRelationship
+        $container->register('test.property_accessor', \Symfony\Component\PropertyAccess\PropertyAccessorInterface::class)
+            ->setSynthetic(true);
+
+        $container->setAlias(\Symfony\Component\PropertyAccess\PropertyAccessorInterface::class, 'test.property_accessor');
     }
 
     public function getCacheDir(): string

@@ -1,0 +1,86 @@
+{#
+  SelectRelationship - Reusable select component for entity relationships and enums.
+
+  Required:
+    entity: object - The entity containing the property
+    property: string - The property name to edit
+
+  Optional:
+    role: string - Role required to show the editable select
+    viewRole: string - Role required to show static display (when edit role not granted)
+    placeholder: string - Placeholder text for empty option (default: '-')
+    displayProperty: string - Property to display for options (default: 'name')
+    valueProperty: string - Property to use as value (default: 'id')
+    filter: array - Simple criteria for findBy() (e.g., { active: true })
+    repositoryMethod: string - Custom repository method name (e.g., 'findByRoles')
+    repositoryArgs: array - Arguments for custom repository method
+    disableEmpty: bool - Disable selection of empty option (default: false)
+    disabled: bool - Force disabled state (default: false)
+    label: string - Optional label text
+
+  Nested attributes (applied directly to inner elements):
+    select:* - Attributes for the <select> element (e.g., select:class="compact")
+    static:* - Attributes for the static display <span> (e.g., static:class="text-muted")
+
+  Usage:
+    - Basic usage with custom styling via nested attributes
+    <twig:K:Entity:SelectRelationship
+      :entity="order"
+      property="region"
+      role="ROLE_ORDER_REGION_EDIT"
+      placeholder="- Region -"
+      select:class="d-block mb-1 bg-warning compact"
+    />
+
+    - With simple filter
+    <twig:K:Entity:SelectRelationship
+      :entity="order"
+      property="assignedTo"
+      :filter="{ active: true }"
+      select:class="d-block bg-info compact"
+    />
+
+    - With custom repository method
+    <twig:K:Entity:SelectRelationship
+      :entity="order"
+      property="assignedTo"
+      repositoryMethod="findByRoles"
+      :repositoryArgs="[['ROLE_TERRITORY_MANAGER']]"
+      select:class="d-block bg-info compact"
+    />
+#}
+
+{% set canEdit = (role is null or is_granted(role)) and not disabled and not this.entityObject.isDeleted|default(false) %}
+{% set canView = viewRole is null or is_granted(viewRole) %}
+
+{% if canEdit %}
+  <div{{ attributes }}>
+    {% if label %}
+      <label class="form-label">{{ label }}</label>
+    {% endif %}
+    <select{{ attributes.nested('select') }} data-model="value">
+      <option
+        value=""
+        {% if disableEmpty %}disabled{% endif %}
+        {% if value is null %}selected{% endif %}
+      >
+        {{ placeholder }}
+      </option>
+      {% for option in this.options %}
+        <option
+          value="{{ this.getOptionValue(option) }}"
+          {% if this.isSelected(option) %}selected{% endif %}
+        >
+          {{ this.getOptionLabel(option) }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+{% elseif canView %}
+  <span{{ attributes }}{{ attributes.nested('static') }}>
+    {% if label %}
+      <span class="text-muted">{{ label }}: </span>
+    {% endif %}
+    {{ this.currentDisplayValue|capitalize }}
+  </span>
+{% endif %}

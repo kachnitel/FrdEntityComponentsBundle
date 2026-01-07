@@ -4,6 +4,7 @@ namespace Kachnitel\EntityComponentsBundle;
 
 use Kachnitel\EntityComponentsBundle\Components\AttachmentManager;
 use Kachnitel\EntityComponentsBundle\Components\CommentsManager;
+use Kachnitel\EntityComponentsBundle\Components\SelectRelationship;
 use Kachnitel\EntityComponentsBundle\Components\TagManager;
 use Kachnitel\EntityComponentsBundle\Twig\ColorConverterExtension;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -31,6 +32,10 @@ class KachnitelEntityComponentsBundle extends AbstractBundle
             ->setAutoconfigured(true);
 
         $container->register(CommentsManager::class)
+            ->setAutowired(true)
+            ->setAutoconfigured(true);
+
+        $container->register(SelectRelationship::class)
             ->setAutowired(true)
             ->setAutoconfigured(true);
 
