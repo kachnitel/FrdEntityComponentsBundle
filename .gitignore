@@ -1,5 +1,5 @@
 /vendor/
-/composer.lock
+composer.lock
 /.phpunit.cache/
 /phpunit.xml
 /.idea/
@@ -7,4 +7,15 @@
 /node_modules/
 /.claude/
 *~
+
+# PHPStan
+.phpstan/
+
+# PHP CS Fixer
+.php-cs-fixer.cache
+
+# Code coverage
+/.coverage/
+
+# Auto-generated files
 /config/reference.php

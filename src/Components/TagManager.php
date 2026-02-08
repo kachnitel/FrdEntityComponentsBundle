@@ -43,8 +43,7 @@ final class TagManager
 
     public function __construct(
         private EntityManagerInterface $entityManager
-    ) {
-    }
+    ) {}
 
     public function mount(TaggableInterface $entity, string $tagClass): void
     {

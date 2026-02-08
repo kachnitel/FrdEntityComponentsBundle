@@ -29,7 +29,6 @@ class SelectRelationshipTest extends ComponentTestCase
             $mock->method('getType')
                 ->willReturn(new ObjectType($className));
         } else {
-            /** @phpstan-ignore method.notFound */
             $mock->method('getTypes')
                 ->willReturn([new \Symfony\Component\PropertyInfo\Type(
                     \Symfony\Component\PropertyInfo\Type::BUILTIN_TYPE_OBJECT,
@@ -49,7 +48,6 @@ class SelectRelationshipTest extends ComponentTestCase
         if (method_exists($mock, 'getType')) {
             $mock->method('getType')->willReturn(null);
         } else {
-            /** @phpstan-ignore method.notFound */
             $mock->method('getTypes')->willReturn(null);
         }
     }

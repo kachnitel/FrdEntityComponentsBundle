@@ -1,0 +1,27 @@
+parameters:
+    level: 6
+    paths:
+        - src
+        - tests
+    excludePaths:
+        - tests/TestKernel.php
+    tmpDir: .phpstan
+    ignoreErrors:
+        # Doctrine repository template type cannot be resolved statically
+        - '#Unable to resolve the template type T in call to method Doctrine\\ORM\\EntityManagerInterface::getRepository\(\)#'
+        # Negated boolean expressions from PHPDoc types
+        - '#Negated boolean expression is always false#'
+        # method_exists/instanceof checks that PHPDoc makes always-true
+        - '#Call to function method_exists\(\) .+ will always evaluate to true#'
+        # Assertions in tests that are always true
+        - '#Call to method PHPUnit\\Framework\\Assert::\w+\(\) .+ will always evaluate to true#'
+        # Generic class without type specification
+        - '#extends generic class .+ but does not specify its types#'
+        # Missing iterable value types in array declarations
+        - identifier: missingType.iterableValue
+        # Traits used by consuming projects, not within this bundle's analyzed code
+        - identifier: trait.unused
+        # Deprecated Symfony PropertyInfo Type class used for backwards compatibility
+        -
+            identifier: class.notFound
+            path: tests/Components/SelectRelationshipTest.php

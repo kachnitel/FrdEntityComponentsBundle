@@ -261,7 +261,6 @@ final class SelectRelationship
             return null;
         }
 
-        /** @phpstan-ignore method.notFound */
         return $types[0]->getClassName();
     }
 
