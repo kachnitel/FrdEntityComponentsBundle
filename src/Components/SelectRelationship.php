@@ -9,6 +9,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use ReflectionNamedType;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\PropertyInfo\PropertyInfoExtractorInterface;
+use Symfony\Component\TypeInfo\Type\NullableType;
+use Symfony\Component\TypeInfo\Type\ObjectType;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
@@ -223,20 +225,44 @@ final class SelectRelationship
             return;
         }
 
-        $types = $this->propertyInfo->getTypes($this->entityClass, $this->property);
+        $className = $this->resolveClassNameFromPropertyInfo();
 
-        if ($types === null || $types === []) {
+        if ($className === null) {
             $this->resolveFromReflection($this->entityClass);
             return;
         }
 
-        $type = $types[0];
-        $className = $type->getClassName();
+        $this->targetClass = $className;
+        $this->isEnum = enum_exists($className);
+    }
 
-        if ($className !== null) {
-            $this->targetClass = $className;
-            $this->isEnum = enum_exists($className);
+    private function resolveClassNameFromPropertyInfo(): ?string
+    {
+        // Symfony 8+: getType() returns a TypeInfo\Type
+        if (method_exists($this->propertyInfo, 'getType')) {
+            $type = $this->propertyInfo->getType($this->entityClass, $this->property);
+
+            if ($type instanceof NullableType) {
+                $type = $type->getWrappedType();
+            }
+
+            if ($type instanceof ObjectType) {
+                return $type->getClassName();
+            }
+
+            return null;
         }
+
+        // Symfony 6.4/7.x: getTypes() returns PropertyInfo\Type[]
+        /** @phpstan-ignore method.notFound */
+        $types = $this->propertyInfo->getTypes($this->entityClass, $this->property);
+
+        if ($types === null || $types === []) {
+            return null;
+        }
+
+        /** @phpstan-ignore method.notFound */
+        return $types[0]->getClassName();
     }
 
     private function resolveFromReflection(string $entityClass): void
