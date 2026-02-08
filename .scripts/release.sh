@@ -58,7 +58,7 @@ echo ""
 echo "📦 Publish to Packagist (auto-updates via webhook)"
 
 # Check for Flex recipe
-MAJOR_MINOR=$(echo "$NEW_TAG" | sed 's/^v//' | cut -d. -f1,2)
+MAJOR_MINOR=$(echo "$NEW_TAG" | cut -d. -f1,2)
 RECIPE_DIR="recipes/$MAJOR_MINOR"
 
 if [[ -d "$RECIPE_DIR" ]]; then
