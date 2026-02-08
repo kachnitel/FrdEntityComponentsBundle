@@ -30,4 +30,11 @@ abstract class ComponentTestCase extends KernelTestCase
 
         $this->factory = $container->get('ux.twig_component.component_factory');
     }
+
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+
+        restore_exception_handler();
+    }
 }

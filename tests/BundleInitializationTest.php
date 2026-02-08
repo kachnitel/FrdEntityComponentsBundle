@@ -24,6 +24,13 @@ class BundleInitializationTest extends KernelTestCase
         $container->set('test.logger', $this->createMock(\Psr\Log\LoggerInterface::class));
     }
 
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+
+        restore_exception_handler();
+    }
+
     public function testBundleIsRegistered(): void
     {
         $container = self::getContainer();
