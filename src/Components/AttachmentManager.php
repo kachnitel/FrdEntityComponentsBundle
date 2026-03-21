@@ -56,7 +56,7 @@ final class AttachmentManager extends AbstractController
     public function __construct(
         private EntityManagerInterface $entityManager,
         private LoggerInterface $logger,
-        private readonly ?FileHandlerInterface $fileHandler = null
+        private readonly FileHandlerInterface $fileHandler
     ) {}
 
     public function mount(AttachableInterface $entity, string $attachmentClass): void
