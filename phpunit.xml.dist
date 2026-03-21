@@ -20,8 +20,12 @@
     </php>
 
     <testsuites>
-        <testsuite name="Kachnitel Entity Components Bundle Test Suite">
-            <directory>tests</directory>
+        <testsuite name="Components">
+            <directory>tests/Components</directory>
+            <file>tests/BundleInitializationTest.php</file>
+        </testsuite>
+        <testsuite name="Field">
+            <directory>tests/Field</directory>
         </testsuite>
     </testsuites>
 

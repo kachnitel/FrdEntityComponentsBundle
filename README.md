@@ -1,24 +1,32 @@
 # Kachnitel Entity Components Bundle
 
 <!-- BADGES -->
-![Tests](<https://img.shields.io/badge/tests-42%20passed-brightgreen>)
-![Coverage](<https://img.shields.io/badge/coverage-27%25-red>)
-![Assertions](<https://img.shields.io/badge/assertions-98-blue>)
+![Tests](<https://img.shields.io/badge/tests-136%20passed-red>)
+![Coverage](<https://img.shields.io/badge/coverage-11%25-red>)
+![Assertions](<https://img.shields.io/badge/assertions-233-blue>)
 ![PHPStan](<https://img.shields.io/badge/PHPStan-6-brightgreen>)
 ![PHP](<https://img.shields.io/badge/PHP-&gt;=8.2-777BB4?logo=php&logoColor=white>)
 ![Symfony](<https://img.shields.io/badge/Symfony-^6.4|^7.0|^8.0-000000?logo=symfony&logoColor=white>)
 <!-- BADGES -->
 
-Reusable Symfony Live Components for entity management. Provides tag and attachment management components that work with any Doctrine entity.
+Reusable Symfony Live Components for entity management. Provides tag management, attachment management, comments, relationship selectors, and a full set of **inline-edit field components** that work with any Doctrine entity.
 
-## Features
+## Components at a glance
 
-- **TagManager** - Live Component for managing tags on any entity
-- **AttachmentManager** - Live Component for file uploads and attachments
-- **SelectRelationship** - Live Component for editing entity relationships and enums inline
-- **Generic interfaces** - Work with your own Tag/Attachment entities
-- **Reusable traits** - Easy implementation for entities
-- **Framework-agnostic design** - Minimal dependencies
+| Component | Tag | Description |
+|---|---|---|
+| `TagManager` | `K:Entity:TagManager` | Colored tag badges with category grouping |
+| `AttachmentManager` | `K:Entity:AttachmentManager` | File upload and attachment list |
+| `CommentsManager` | `K:Entity:CommentsManager` | Threaded comments with delete confirmation |
+| `SelectRelationship` | `K:Entity:SelectRelationship` | Eager dropdown for small option sets and enums |
+| `StringField` | `K:Entity:Field:String` | Inline text edit |
+| `IntField` | `K:Entity:Field:Int` | Inline integer edit |
+| `FloatField` | `K:Entity:Field:Float` | Inline decimal edit |
+| `BoolField` | `K:Entity:Field:Bool` | Inline checkbox toggle |
+| `DateField` | `K:Entity:Field:Date` | Inline date / datetime / time edit |
+| `EnumField` | `K:Entity:Field:Enum` | Inline dropdown for PHP backed enums |
+| `RelationshipField` | `K:Entity:Field:Relationship` | Live-search inline editor for ManyToOne / OneToOne |
+| `CollectionField` | `K:Entity:Field:Collection` | Live-search inline editor for ManyToMany / OneToMany |
 
 ## Installation
 
@@ -26,7 +34,226 @@ Reusable Symfony Live Components for entity management. Provides tag and attachm
 composer require kachnitel/entity-components-bundle
 ```
 
-## Quick Start
+---
+
+## Inline-Edit Field Components
+
+All field components share the same lifecycle:
+
+- **Display mode** — renders the current value with an ✎ edit trigger (when permitted)
+- **Edit mode** — renders an input / select, with Save and Cancel buttons
+- **Save** — validates via Symfony Validator before flushing; shows inline error on failure
+- **Cancel** — discards unsaved input and refreshes from the database
+
+### Basic usage
+
+```twig
+{# Any property with a setter becomes inline-editable #}
+<twig:K:Entity:Field:String  :entity="user"    property="name" />
+<twig:K:Entity:Field:Int     :entity="product" property="stock" />
+<twig:K:Entity:Field:Float   :entity="product" property="price" />
+<twig:K:Entity:Field:Bool    :entity="user"    property="active" />
+<twig:K:Entity:Field:Date    :entity="event"   property="startsAt" />
+<twig:K:Entity:Field:Enum    :entity="order"   property="status" />
+
+{# Association fields — live search for large datasets #}
+<twig:K:Entity:Field:Relationship :entity="product"  property="category" />
+<twig:K:Entity:Field:Collection   :entity="post"     property="tags" />
+```
+
+### Controlling editability
+
+By default all properties with a setter are editable. Override `EditabilityResolverInterface`
+to enforce your own policy — role checks, entity state, attribute flags, etc.:
+
+```yaml
+# config/services.yaml
+Kachnitel\EntityComponentsBundle\Field\EditabilityResolverInterface:
+    alias: App\Field\MyEditabilityResolver
+```
+
+```php
+// src/Field/MyEditabilityResolver.php
+use Kachnitel\EntityComponentsBundle\Components\Field\EditabilityResolverInterface;
+
+class MyEditabilityResolver implements EditabilityResolverInterface
+{
+    public function __construct(
+        private readonly Security $security,
+        private readonly PropertyAccessorInterface $propertyAccessor,
+    ) {}
+
+    public function canEdit(object $entity, string $property): bool
+    {
+        if (!$this->security->isGranted('ROLE_EDITOR')) {
+            return false;
+        }
+        return $this->propertyAccessor->isWritable($entity, $property);
+    }
+}
+```
+
+`kachnitel/admin-bundle` registers its own `AdminEditabilityResolver` which reads
+`#[AdminColumn(editable: ...)]` and `#[Admin(enableInlineEdit: true)]` attributes
+and checks the `ADMIN_EDIT` voter automatically.
+
+### Customising the value display
+
+The read-only cell uses `_display.html.twig`, which renders `{{ value }}` by default.
+Override it in your app for richer display:
+
+```twig
+{# templates/bundles/KachnitelEntityComponents/components/field/_display.html.twig #}
+{% if value is null %}
+    <em class="text-muted">not set</em>
+{% elseif value is instanceof('\DateTimeInterface') %}
+    {{ value|date('d/m/Y H:i') }}
+{% else %}
+    {{ value }}
+{% endif %}
+```
+
+### EnumField — custom labels
+
+If your enum implements `label()` or `getLabel()`, it will be used in the dropdown:
+
+```php
+enum OrderStatus: string
+{
+    case Pending  = 'pending';
+    case Shipped  = 'shipped';
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::Pending => 'Awaiting shipment',
+            self::Shipped => 'On its way',
+        };
+    }
+}
+```
+
+Otherwise the case name is humanized: `PENDING_APPROVAL` → `Pending Approval`.
+
+### RelationshipField & CollectionField — label resolution
+
+The live search labels are resolved in this order:
+
+1. `__toString()` on the target entity
+2. First of `name`, `label`, `title` that exists
+3. `ClassName #ID` fallback
+
+Add `__toString()` to your related entity for the cleanest labels.
+
+### Choosing between relationship/collection components
+
+| Need | Component |
+|---|---|
+| Single-value relation, large dataset, save/cancel | `K:Entity:Field:Relationship` |
+| Multi-value collection, large dataset, save/cancel | `K:Entity:Field:Collection` |
+| Single-value relation or enum, small/static set, persist-on-change | `K:Entity:SelectRelationship` |
+| Tagging with colored category badges | `K:Entity:TagManager` |
+
+---
+
+## TagManager
+
+Live Component for managing tags on entities.
+
+**Props:**
+- `entity` (TaggableInterface) — the entity to manage tags for
+- `tagClass` (string) — FQCN of your Tag entity
+- `readOnly` (bool) — disable editing (default: `false`)
+
+```twig
+<twig:K:Entity:TagManager
+    :entity="product"
+    tagClass="App\\Entity\\Tag"
+/>
+```
+
+---
+
+## AttachmentManager
+
+Live Component for managing file attachments on entities.
+
+**Props:**
+- `entity` (AttachableInterface) — the entity to manage attachments for
+- `attachmentClass` (string) — FQCN of your Attachment entity
+- `readOnly` (bool) — disable file uploads/deletion (default: `false`)
+- `property` (string) — property name for the collection (default: `'attachments'`)
+
+```twig
+<twig:K:Entity:AttachmentManager
+    :entity="product"
+    attachmentClass="App\\Entity\\UploadedFile"
+/>
+```
+
+Register a `FileHandlerInterface` service in your app:
+
+```php
+use Kachnitel\EntityComponentsBundle\Interface\FileHandlerInterface;
+
+class LocalStorageHandler implements FileHandlerInterface
+{
+    public function handle(UploadedFile $file): AttachmentInterface { /* ... */ }
+    public function deleteFile(AttachmentInterface $attachment): void { /* ... */ }
+}
+```
+
+---
+
+## CommentsManager
+
+Live Component for threaded comments with delete confirmation.
+
+**Props:**
+- `entity` (CommentableInterface) — the entity to manage comments for
+- `commentClass` (string) — FQCN of your Comment entity
+- `readOnly` (bool) — disable new comments and deletion (default: `false`)
+
+```twig
+<twig:K:Entity:CommentsManager
+    :entity="article"
+    commentClass="App\\Entity\\Comment"
+/>
+```
+
+---
+
+## SelectRelationship
+
+Live Component for inline editing of entity relationships and enums via an eager dropdown.
+Automatically detects whether the target property is an entity or enum.
+
+**Props:**
+- `entity` (object) — the entity containing the property to edit
+- `property` (string) — the property name
+- `placeholder` (string) — empty option text (default: `'-'`)
+- `displayProperty` (string) — property used as option label (default: `'name'`)
+- `valueProperty` (string) — property used as option value (default: `'id'`)
+- `filter` (array) — simple `findBy()` criteria, e.g. `{ active: true }`
+- `repositoryMethod` (string) — custom repository method name
+- `repositoryArgs` (array) — arguments for the custom repository method
+- `role` (string) — role required to show the editable select
+- `viewRole` (string) — role required to show the read-only display
+- `disableEmpty` (bool) — disable the empty option (default: `false`)
+- `disabled` (bool) — force read-only (default: `false`)
+
+```twig
+<twig:K:Entity:SelectRelationship
+    :entity="order"
+    property="region"
+    role="ROLE_ORDER_REGION_EDIT"
+    placeholder="— Select Region —"
+/>
+```
+
+---
+
+## Installation details
 
 ### 1. Create a Tag Entity
 
@@ -36,23 +263,11 @@ use Kachnitel\EntityComponentsBundle\Interface\TagInterface;
 #[ORM\Entity]
 class Tag implements TagInterface
 {
-    #[ORM\Id, ORM\GeneratedValue, ORM\Column]
-    private ?int $id = null;
-
-    #[ORM\Column(length: 64)]
-    private string $value;
-
-    #[ORM\Column(length: 64, nullable: true)]
-    private ?string $displayName = null;
-
-    #[ORM\Column(length: 32, nullable: true)]
-    private ?string $category = null;
-
-    // Implement TagInterface methods...
+    // ... getId(), getValue(), getDisplayName(), getCategory(), getCategoryColor()
 }
 ```
 
-### 2. Make Your Entity Taggable
+### 2. Make your entity taggable
 
 ```php
 use Kachnitel\EntityComponentsBundle\Interface\TaggableInterface;
@@ -66,279 +281,16 @@ class Product implements TaggableInterface
     #[ORM\ManyToMany(targetEntity: Tag::class)]
     private Collection $tags;
 
-    public function __construct()
-    {
-        $this->initializeTags();
-    }
+    public function __construct() { $this->initializeTags(); }
 }
 ```
 
-### 3. Use the TagManager Component
-
-```twig
-<twig:K:Entity:TagManager
-    entity="{{ product }}"
-    tagClass="App\\Entity\\Tag"
-/>
-```
-
-## Attachments Quick Start
-
-### 1. Create an Attachment Entity
-
-```php
-use Kachnitel\EntityComponentsBundle\Interface\AttachmentInterface;
-
-#[ORM\Entity]
-class UploadedFile implements AttachmentInterface
-{
-    #[ORM\Id, ORM\GeneratedValue, ORM\Column]
-    private ?int $id = null;
-
-    #[ORM\Column(length: 255)]
-    private string $url;
-
-    #[ORM\Column(length: 100)]
-    private string $mimeType;
-
-    #[ORM\Column(length: 255)]
-    private string $path;
-
-    // Implement AttachmentInterface methods...
-}
-```
-
-### 2. Make Your Entity Attachable
-
-```php
-use Kachnitel\EntityComponentsBundle\Interface\AttachableInterface;
-use Kachnitel\EntityComponentsBundle\Trait\AttachableTrait;
-
-#[ORM\Entity]
-class Product implements AttachableInterface
-{
-    use AttachableTrait;
-
-    #[ORM\ManyToMany(targetEntity: UploadedFile::class)]
-    #[ORM\JoinColumn(onDelete: 'CASCADE')]
-    #[ORM\InverseJoinColumn(unique: true)]
-    private Collection $attachments;
-
-    public function __construct()
-    {
-        $this->initializeAttachments();
-    }
-}
-```
-
-### 3. Implement FileHandlerInterface
-
-```php
-use Kachnitel\EntityComponentsBundle\Interface\FileHandlerInterface;
-
-class LocalStorageHandler implements FileHandlerInterface
-{
-    public function __construct(
-        private string $uploadDirectory,
-        private EntityManagerInterface $entityManager
-    ) {}
-
-    public function handle(UploadedFile $file): AttachmentInterface
-    {
-        $fileName = uniqid() . '.' . $file->guessExtension();
-        $file->move($this->uploadDirectory, $fileName);
-
-        $uploadedFile = new \App\Entity\UploadedFile();
-        $uploadedFile->setUrl($fileName);
-        $uploadedFile->setPath('/uploads/' . $fileName);
-        $uploadedFile->setMimeType($file->getMimeType());
-
-        $this->entityManager->persist($uploadedFile);
-
-        return $uploadedFile;
-    }
-
-    public function deleteFile(AttachmentInterface $attachment): void
-    {
-        $filePath = $this->uploadDirectory . '/' . $attachment->getUrl();
-        if (file_exists($filePath)) {
-            unlink($filePath);
-        }
-
-        $this->entityManager->remove($attachment);
-    }
-}
-```
-
-### 4. Use the AttachmentManager Component
-
-```twig
-<twig:K:Entity:AttachmentManager
-    entity="{{ product }}"
-    attachmentClass="App\\Entity\\UploadedFile"
-/>
-```
-
-## Components
-
-### TagManager
-
-Live Component for managing tags on entities.
-
-**Props:**
-- `entity` (TaggableInterface) - The entity to manage tags for
-- `tagClass` (string) - FQCN of your Tag entity
-- `readOnly` (bool) - Disable editing (default: false)
-
-**Events:**
-- `toast.show` - Dispatched on save/error with message
-- `modal.close` - Dispatched after successful save
-
-**Usage:**
-```twig
-<twig:K:Entity:TagManager
-    entity="{{ product }}"
-    tagClass="App\\Entity\\Tag"
-/>
-```
-
-### AttachmentManager
-
-Live Component for managing file attachments on entities.
-
-**Props:**
-- `entity` (AttachableInterface) - The entity to manage attachments for
-- `attachmentClass` (string) - FQCN of your Attachment entity
-- `readOnly` (bool) - Disable file uploads/deletion (default: false)
-- `property` (string) - Property name for attachments (default: 'attachments')
-
-**Events:**
-- `toast.show` - Dispatched on upload/delete/error with message
-
-**Usage:**
-```twig
-<twig:K:Entity:AttachmentManager
-    entity="{{ product }}"
-    attachmentClass="App\\Entity\\UploadedFile"
-/>
-```
-
-**Required Service:**
-You must implement and register a `FileHandlerInterface` service:
-
-```php
-use Kachnitel\EntityComponentsBundle\Interface\FileHandlerInterface;
-use Kachnitel\EntityComponentsBundle\Interface\AttachmentInterface;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
-
-class LocalStorageHandler implements FileHandlerInterface
-{
-    public function handle(UploadedFile $file): AttachmentInterface
-    {
-        // Handle file upload, store it, create and return your Attachment entity
-    }
-
-    public function deleteFile(AttachmentInterface $attachment): void
-    {
-        // Delete the file from storage
-    }
-}
-```
-
-### SelectRelationship
-
-Live Component for inline editing of entity relationships and enum properties. Automatically detects whether the target property is an Entity or Enum and loads appropriate options.
-
-**Props:**
-- `entity` (object) - The entity containing the property to edit (required)
-- `property` (string) - The property name to edit (required)
-- `role` (string) - Role required to show the editable select (optional)
-- `viewRole` (string) - Role required to show static display when edit role not granted (optional)
-- `placeholder` (string) - Placeholder text for empty option (default: '-')
-- `displayProperty` (string) - Property to display for options (default: 'name')
-- `valueProperty` (string) - Property to use as value (default: 'id')
-- `filter` (array) - Simple criteria for findBy() e.g., `{ active: true }` (optional)
-- `repositoryMethod` (string) - Custom repository method name e.g., 'findByRoles' (optional)
-- `repositoryArgs` (array) - Arguments for custom repository method (optional)
-- `disableEmpty` (bool) - Disable selection of empty option (default: false)
-- `disabled` (bool) - Force disabled state (default: false)
-- `label` (string) - Optional label text
-
-**Usage:**
-```twig
-{# Basic usage with entity relationship #}
-<twig:K:Entity:SelectRelationship
-    :entity="order"
-    property="region"
-    role="ROLE_ORDER_REGION_EDIT"
-    placeholder="- Select Region -"
-    select:class="form-select"
-/>
-
-{# With enum property #}
-<twig:K:Entity:SelectRelationship
-    :entity="order"
-    property="status"
-    role="ROLE_ORDER_STATUS_EDIT"
-/>
-
-{# With simple filter #}
-<twig:K:Entity:SelectRelationship
-    :entity="order"
-    property="assignedTo"
-    :filter="{ active: true }"
-    displayProperty="fullName"
-/>
-
-{# With custom repository method #}
-<twig:K:Entity:SelectRelationship
-    :entity="order"
-    property="assignedTo"
-    repositoryMethod="findByRoles"
-    :repositoryArgs="[['ROLE_TERRITORY_MANAGER']]"
-/>
-```
-
-**Nested Attributes:**
-- `select:*` - Attributes for the `<select>` element (e.g., `select:class="compact"`)
-- `static:*` - Attributes for the static display `<span>` (e.g., `static:class="text-muted"`)
-
-**Enum Support:**
-Enums are automatically detected. If your enum implements a `displayValue()` method, it will be used for the option label:
-
-```php
-enum OrderStatus: string
-{
-    case Pending = 'pending';
-    case Shipped = 'shipped';
-
-    public function displayValue(): string
-    {
-        return match ($this) {
-            self::Pending => 'Awaiting Shipment',
-            self::Shipped => 'Shipped',
-        };
-    }
-}
-```
-
-## Customization
-
-All components use blocks that can be overridden:
-
-```twig
-<twig:K:Entity:TagManager entity="{{ product }}" tagClass="App\\Entity\\Tag">
-    {% block tag_badge %}
-        {# Custom tag display #}
-        <span class="custom-tag">{{ tag.value }}</span>
-    {% endblock %}
-</twig:K:Entity:TagManager>
-```
+---
 
 ## Requirements
 
 - PHP 8.2+
-- Symfony 6.4 or 7.0+
+- Symfony 6.4, 7.x, or 8.x
 - Doctrine ORM
 - Symfony UX Live Component
 

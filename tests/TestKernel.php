@@ -84,7 +84,7 @@ class TestKernel extends Kernel
 
     public function getCacheDir(): string
     {
-        return sys_get_temp_dir() . '/kachnitel_entity_components_bundle/cache/' . spl_object_hash($this);
+        return sys_get_temp_dir() . '/kachnitel_entity_components_bundle/cache';
     }
 
     public function getLogDir(): string

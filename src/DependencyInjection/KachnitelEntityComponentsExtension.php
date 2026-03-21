@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Kachnitel\EntityComponentsBundle\DependencyInjection;
 
 use Symfony\Component\Config\FileLocator;
@@ -18,11 +20,18 @@ class KachnitelEntityComponentsExtension extends Extension implements PrependExt
 
     public function prepend(ContainerBuilder $container): void
     {
-        // Configure TwigComponent defaults
+        // Map component namespaces to template directories.
+        //
+        // K:Entity:*        — entity management components (TagManager, AttachmentManager, …)
+        // K:Entity:Field:*  — inline-edit field components (StringField, IntField, …)
+        //
+        // TwigComponent uses the last segment after the final ":" as the template name,
+        // so K:Entity:Field:String → @KachnitelEntityComponents/components/field/StringField.html.twig
         $container->prependExtensionConfig('twig_component', [
             'anonymous_template_directory' => 'components/',
             'defaults' => [
                 'Kachnitel\\EntityComponentsBundle\\Components\\' => '@KachnitelEntityComponents/components/',
+                'Kachnitel\\EntityComponentsBundle\\Field\\'      => '@KachnitelEntityComponents/components/field/',
             ],
         ]);
     }

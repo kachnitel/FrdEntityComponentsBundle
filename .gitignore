@@ -6,6 +6,8 @@ composer.lock
 /.vscode/
 /node_modules/
 /.claude/
+#Ignore vscode AI rules
+.github/instructions/
 *~
 
 # PHPStan

@@ -1,0 +1,87 @@
+{#
+ # CollectionField - inline OneToMany / ManyToMany editor with live search.
+ #   this.editMode      - bool
+ #   this.canEdit       - bool   (#[ExposeInTemplate] on canEdit())
+ #   this.selectedItems - array ({id, label})
+ #   this.searchResults - array ({id, label})
+ #   this.label         - string
+ #   selectedIds        - array<int> (LiveProp)
+ #   searchQuery        - string    (LiveProp)
+ #   errorMessage       - string    (LiveProp — non-empty when last save failed validation)
+ #   saveSuccess        - bool      (LiveProp — true after a successful flush)
+ #}
+<div {{ attributes }}>
+    {% if editMode and this.canEdit %}
+        {% set selected = this.selectedItems %}
+        {% if selected is not empty %}
+            <div class="d-flex flex-wrap gap-1 mb-2">
+                {% for item in selected %}
+                    <span class="badge bg-secondary d-flex align-items-center gap-1">
+                        {{ item.label }}
+                        <button type="button" class="btn-close btn-close-white"
+                            style="font-size:.6rem"
+                            data-action="live#action" data-live-action-param="removeItem"
+                            data-live-id-param="{{ item.id }}"
+                            aria-label="Remove {{ item.label }}"></button>
+                    </span>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-muted mb-2">None selected.</p>
+        {% endif %}
+
+        <input type="search"
+            class="form-control form-control-sm{% if errorMessage %} is-invalid{% endif %}"
+            placeholder="Search to add…"
+            data-model="debounce(300)|searchQuery"
+            value="{{ searchQuery }}"
+            aria-label="Search {{ this.label }}"
+            autocomplete="off"
+        />
+
+        {% if errorMessage %}
+            <div class="invalid-feedback d-block">{{ errorMessage }}</div>
+        {% endif %}
+
+        {% set results = this.searchResults %}
+        {% if results is not empty %}
+            <ul class="list-unstyled border rounded mt-1 mb-0" style="max-height:200px;overflow-y:auto">
+                {% for item in results %}
+                    {% set alreadySelected = item.id in selectedIds %}
+                    <li>
+                        <button type="button"
+                            class="btn btn-link w-100 text-start px-2 py-1{% if alreadySelected %} text-muted{% endif %}"
+                            {% if not alreadySelected %}
+                                data-action="live#action" data-live-action-param="addItem"
+                                data-live-id-param="{{ item.id }}"
+                            {% else %}
+                                disabled
+                            {% endif %}
+                        >{{ item.label }}{% if alreadySelected %} <small class="text-muted">(added)</small>{% endif %}</button>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% elseif searchQuery is not empty %}
+            <p class="text-muted mb-0 mt-1">No results.</p>
+        {% endif %}
+
+        <div class="d-flex gap-1 mt-2">
+            <button type="button" class="btn btn-sm btn-success"
+                data-action="live#action" data-live-action-param="save">Save</button>
+            <button type="button" class="btn btn-sm btn-secondary"
+                data-action="live#action" data-live-action-param="cancelEdit">Cancel</button>
+        </div>
+    {% else %}
+        <span class="field-editable-cell">
+            {% include '@KachnitelEntityComponents/components/field/_display.html.twig' %}
+            {% if saveSuccess %}
+                <span class="inline-edit-saved text-success small" aria-label="Saved">✓</span>
+            {% endif %}
+            {% if this.canEdit %}
+                <button type="button" class="field-edit-trigger"
+                    data-action="live#action" data-live-action-param="activateEditing"
+                    title="Edit {{ this.label }}">✎</button>
+            {% endif %}
+        </span>
+    {% endif %}
+</div>

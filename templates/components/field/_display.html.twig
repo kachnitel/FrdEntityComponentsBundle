@@ -1,0 +1,20 @@
+{#
+ # Default read-only display for inline-edit field components.
+ #
+ # Renders the current entity property value with sensible defaults for common types.
+ # Override this template in your app for richer display:
+ #
+ #   templates/bundles/KachnitelEntityComponents/components/field/_display.html.twig
+ #
+ # Variables (inherited from the parent field template scope):
+ #   value    - mixed  (#[ExposeInTemplate] on readValue())
+ #   entity   - object (#[ExposeInTemplate] on resolvedEntity)
+ #   property - string (LiveProp)
+ #}
+{% if value is null %}
+    <span class="text-muted">—</span>
+{% elseif value is iterable %}
+    {{ value|join(', ') }}
+{% else %}
+    {{ value }}
+{% endif %}

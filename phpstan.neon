@@ -3,25 +3,30 @@ parameters:
     paths:
         - src
         - tests
-    excludePaths:
-        - tests/TestKernel.php
     tmpDir: .phpstan
     ignoreErrors:
         # Doctrine repository template type cannot be resolved statically
         - '#Unable to resolve the template type T in call to method Doctrine\\ORM\\EntityManagerInterface::getRepository\(\)#'
-        # Negated boolean expressions from PHPDoc types
-        - '#Negated boolean expression is always false#'
-        # method_exists/instanceof checks that PHPDoc makes always-true
+
+        # method_exists() checks for Symfony version compatibility are always true on the installed version
         - '#Call to function method_exists\(\) .+ will always evaluate to true#'
-        # Assertions in tests that are always true
+
+        # PHPUnit generic assertions can trigger "always true" for narrowed types
         - '#Call to method PHPUnit\\Framework\\Assert::\w+\(\) .+ will always evaluate to true#'
+
         # Generic class without type specification
         - '#extends generic class .+ but does not specify its types#'
-        # Missing iterable value types in array declarations
+
+        # Missing iterable value types in array declarations — intentional for brevity
         - identifier: missingType.iterableValue
-        # Traits used by consuming projects, not within this bundle's analyzed code
+
+        # Traits are consumed by classes outside this bundle's analysis scope
         - identifier: trait.unused
-        # Deprecated Symfony PropertyInfo Type class used for backwards compatibility
+
+        # Negated boolean expressions arising from PHPDoc type narrowing
+        - '#Negated boolean expression is always false#'
+
+        # Deprecated Symfony PropertyInfo Type class used for 6.4 backwards compatibility
         -
             identifier: class.notFound
             path: tests/Components/SelectRelationshipTest.php
