@@ -12,6 +12,15 @@ use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 
 class KachnitelEntityComponentsExtension extends Extension implements PrependExtensionInterface
 {
+    /**
+     * $configs is unused here because no bundle configuration schema is defined;
+     * all services are loaded unconditionally. The parameter is required by
+     * ExtensionInterface::load() and cannot be removed.
+     *
+     * @param array<mixed> $configs
+     *
+     * @SuppressWarnings(UnusedFormalParameter)
+     */
     public function load(array $configs, ContainerBuilder $container): void
     {
         $loader = new PhpFileLoader($container, new FileLocator(__DIR__ . '/../../config'));

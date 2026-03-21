@@ -20,6 +20,14 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  *
  * Automatically detects whether the property is an Entity or Enum and
  * loads appropriate options.
+ *
+ * The field count of this class exceeds the default PHPMD threshold because
+ * Symfony LiveComponent requires each configurable option to be an individually
+ * annotated #[LiveProp] — they cannot be grouped into a value object without
+ * losing LiveComponent serialization support. Every field here maps directly
+ * to a documented, user-facing prop in the component's public API.
+ *
+ * @SuppressWarnings(TooManyFields)
  */
 #[AsLiveComponent('K:Entity:SelectRelationship', template: '@KachnitelEntityComponents/components/SelectRelationship.html.twig')]
 final class SelectRelationship

@@ -45,11 +45,18 @@ trait AssociationSearchTrait
     /**
      * Resolve which fields to search against for the given target entity metadata.
      *
+     * The $entityName parameter is intentionally kept as an extensibility hook:
+     * classes using this trait can override this method and apply per-entity
+     * custom logic (e.g. different search fields for a specific entity type).
+     * It is unused in this base implementation by design.
+     *
      * @param ClassMetadata<object> $metadata    Target entity Doctrine metadata
      * @param string                $entityName  Short class name (available for overrides in subclasses)
      * @param list<string>|null     $override    Explicit field list; null = auto-detect from metadata
      *
      * @return list<string> Non-empty list of field names to include in search queries
+     *
+     * @SuppressWarnings(UnusedFormalParameter)
      */
     protected function resolveSearchFields(ClassMetadata $metadata, string $entityName, ?array $override): array
     {

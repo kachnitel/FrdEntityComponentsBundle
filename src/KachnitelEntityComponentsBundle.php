@@ -42,13 +42,26 @@ class KachnitelEntityComponentsBundle extends AbstractBundle
     }
 
     /**
+     * $config is unused because this bundle defines no configuration schema.
+     * $builder is unused because service registration is handled via $container->import().
+     * Both parameters are required by AbstractBundle::loadExtension() and cannot be removed.
+     *
      * @param array<string, mixed> $config
+     *
+     * @SuppressWarnings(UnusedFormalParameter)
      */
     public function loadExtension(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
     {
         $container->import('../config/services.php');
     }
 
+    /**
+     * $configurator is unused because all prepend config is applied directly to the
+     * ContainerBuilder. The parameter is required by AbstractBundle::prependExtension()
+     * and cannot be removed.
+     *
+     * @SuppressWarnings(UnusedFormalParameter)
+     */
     public function prependExtension(ContainerConfigurator $configurator, ContainerBuilder $container): void
     {
         $container->prependExtensionConfig('twig', [

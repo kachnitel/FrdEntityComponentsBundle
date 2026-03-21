@@ -23,6 +23,16 @@ use Symfony\UX\LiveComponent\ComponentWithFormTrait;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Symfony\UX\TwigComponent\Attribute\ExposeInTemplate;
 
+/**
+ * Live Component for managing file attachments on any AttachableInterface entity.
+ *
+ * The coupling count (CBO) of this class is inherently high because it integrates
+ * Doctrine, Symfony Form, LiveComponent, file handling, and HTTP — all of which are
+ * required to deliver a self-contained upload/delete UI component. Each dependency
+ * serves a distinct, non-removable role in the component's feature set.
+ *
+ * @SuppressWarnings(CouplingBetweenObjects)
+ */
 #[AsLiveComponent('K:Entity:AttachmentManager', template: '@KachnitelEntityComponents/components/AttachmentManager.html.twig')]
 final class AttachmentManager extends AbstractController
 {

@@ -159,41 +159,16 @@ final class CommentsManager extends AbstractController
         $this->submitForm();
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            try {
-                $text = $form->get('text')->getData();
-                if (is_null($text) || trim($text) === '') {
-                    $this->errors = ['Comment cannot be empty'];
-                    return;
-                }
+        if (!$form->isSubmitted() || !$form->isValid()) {
+            return;
+        }
 
-                // Create new comment instance using reflection
-                $commentClass = $this->commentClass;
-                $comment = new $commentClass();
-
-                if (!$comment instanceof CommentInterface) {
-                    throw new Exception("Failed to create comment instance of type {$commentClass}");
-                }
-
-                $comment->setText($text);
-
-                // Set created by if the comment has a setCreatedBy method
-                $user = $this->security->getUser();
-                if ($user && method_exists($comment, 'setCreatedBy')) {
-                    $comment->setCreatedBy($user);
-                }
-
-                $entity = $this->getEntity();
-                $entity->addComment($comment);
-
-                $this->entityManager->persist($comment);
-                $this->entityManager->flush();
-
-                $this->resetForm();
-                $this->errors = [];
-            } catch (Exception $e) {
-                $this->errors = [$e->getMessage()];
-            }
+        try {
+            $this->persistComment($form);
+            $this->resetForm();
+            $this->errors = [];
+        } catch (Exception $e) {
+            $this->errors = [$e->getMessage()];
         }
     }
 
@@ -239,6 +214,44 @@ final class CommentsManager extends AbstractController
             $this->entityManager->flush();
         } catch (Exception $e) {
             $this->errors = [$e->getMessage()];
+        }
+    }
+
+    private function persistComment(FormInterface $form): void
+    {
+        $text = $form->get('text')->getData();
+        if ($text === null || trim($text) === '') {
+            throw new Exception('Comment cannot be empty');
+        }
+
+        $comment = $this->buildComment($text);
+        $entity  = $this->getEntity();
+        $entity->addComment($comment);
+
+        $this->entityManager->persist($comment);
+        $this->entityManager->flush();
+    }
+
+    private function buildComment(string $text): CommentInterface
+    {
+        $commentClass = $this->commentClass;
+        $comment      = new $commentClass();
+
+        if (!$comment instanceof CommentInterface) {
+            throw new Exception("Failed to create comment instance of type {$commentClass}");
+        }
+
+        $comment->setText($text);
+        $this->assignCommentAuthor($comment);
+
+        return $comment;
+    }
+
+    private function assignCommentAuthor(CommentInterface $comment): void
+    {
+        $user = $this->security->getUser();
+        if ($user !== null && method_exists($comment, 'setCreatedBy')) {
+            $comment->setCreatedBy($user);
         }
     }
 }
