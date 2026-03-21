@@ -4,15 +4,22 @@ declare(strict_types=1);
 
 namespace Kachnitel\EntityComponentsBundle\Tests\Field;
 
+use Kachnitel\EntityComponentsBundle\Components\Field\DefaultEditabilityResolver;
 use Kachnitel\EntityComponentsBundle\Components\Field\RelationshipField;
+use Kachnitel\EntityComponentsBundle\DependencyInjection\Compiler\AttachmentManagerPass;
+use Kachnitel\EntityComponentsBundle\KachnitelEntityComponentsBundle;
 use Kachnitel\EntityComponentsBundle\Tests\Field\Fixtures\FieldTestOwnerEntity;
 use Kachnitel\EntityComponentsBundle\Tests\Field\Fixtures\FieldTestTagEntity;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\UsesClass;
 
-/**
- * @covers \Kachnitel\EntityComponentsBundle\Field\RelationshipField
- * @group field
- * @group field-relationship
- */
+#[CoversClass(RelationshipField::class)]
+#[UsesClass(DefaultEditabilityResolver::class)]
+#[UsesClass(KachnitelEntityComponentsBundle::class)]
+#[UsesClass(AttachmentManagerPass::class)]
+#[Group('field')]
+#[Group('field-relationship')]
 class RelationshipFieldTest extends FieldTestCase
 {
     /**
@@ -61,6 +68,17 @@ class RelationshipFieldTest extends FieldTestCase
         $this->assertNull($component->selectedId);
     }
 
+    // ── canEdit() ─────────────────────────────────────────────────────────────
+
+    public function testCanEditReturnsTrueForAssociationProperty(): void
+    {
+        $fixtures  = $this->createFixtures();
+        $component = $this->getComponent();
+        $component->mount($fixtures['owner'], 'primaryTag');
+
+        $this->assertTrue($component->canEdit());
+    }
+
     // ── getSelectedLabel() ────────────────────────────────────────────────────
 
     public function testGetSelectedLabelResolvesToStringMethod(): void
@@ -69,7 +87,6 @@ class RelationshipFieldTest extends FieldTestCase
         $component = $this->getComponent();
         $component->mount($fixtures['owner'], 'primaryTag');
 
-        // FieldTestTagEntity::__toString() returns the name
         $this->assertSame('Electronics', $component->getSelectedLabel());
     }
 
@@ -83,6 +100,16 @@ class RelationshipFieldTest extends FieldTestCase
         $component->mount($owner, 'primaryTag');
 
         $this->assertNull($component->getSelectedLabel());
+    }
+
+    public function testGetSelectedLabelReturnsFallbackForMissingEntity(): void
+    {
+        $fixtures  = $this->createFixtures();
+        $component = $this->getComponent();
+        $component->mount($fixtures['owner'], 'primaryTag');
+
+        $component->selectedId = 99999;
+        $this->assertSame('#99999', $component->getSelectedLabel());
     }
 
     // ── LiveActions: select() & clear() ───────────────────────────────────────
@@ -147,6 +174,19 @@ class RelationshipFieldTest extends FieldTestCase
         $this->assertNull($reloaded?->getPrimaryTag());
     }
 
+    public function testSaveExitsEditModeAndSetsSuccessFlag(): void
+    {
+        $fixtures  = $this->createFixtures();
+        $component = $this->getComponent();
+        $component->editMode = true;
+        $component->mount($fixtures['owner'], 'primaryTag');
+
+        $component->save();
+
+        $this->assertFalse($component->editMode);
+        $this->assertTrue($component->saveSuccess);
+    }
+
     public function testSaveThrowsForNonAssociationProperty(): void
     {
         $owner = new FieldTestOwnerEntity('Product');
@@ -160,6 +200,20 @@ class RelationshipFieldTest extends FieldTestCase
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('is not a recognised Doctrine association');
+
+        $component->save();
+    }
+
+    public function testSaveThrowsWhenSelectedEntityNotFound(): void
+    {
+        $fixtures  = $this->createFixtures();
+        $component = $this->getComponent();
+        $component->editMode = true;
+        $component->mount($fixtures['owner'], 'primaryTag');
+
+        $component->selectedId = 99999;
+
+        $this->expectException(\RuntimeException::class);
 
         $component->save();
     }
@@ -179,6 +233,19 @@ class RelationshipFieldTest extends FieldTestCase
         $this->assertFalse($component->editMode);
         $this->assertSame($fixtures['tag1']->getId(), $component->selectedId);
         $this->assertSame('', $component->searchQuery);
+    }
+
+    public function testCancelEditClearsErrorMessage(): void
+    {
+        $fixtures  = $this->createFixtures();
+        $component = $this->getComponent();
+        $component->editMode     = true;
+        $component->errorMessage = 'old error';
+        $component->mount($fixtures['owner'], 'primaryTag');
+
+        $component->cancelEdit();
+
+        $this->assertSame('', $component->errorMessage);
     }
 
     // ── getSearchResults() ────────────────────────────────────────────────────
@@ -215,5 +282,23 @@ class RelationshipFieldTest extends FieldTestCase
 
         $component->searchQuery = 'xyzzy-no-match';
         $this->assertSame([], $component->getSearchResults());
+    }
+
+    // ── activateEditing() ─────────────────────────────────────────────────────
+
+    public function testActivateEditingClearsFeedbackState(): void
+    {
+        $fixtures  = $this->createFixtures();
+        $component = $this->getComponent();
+        $component->mount($fixtures['owner'], 'primaryTag');
+        $component->errorMessage = 'Stale error';
+        $component->saveSuccess  = true;
+        $component->editMode     = false;
+
+        $component->activateEditing();
+
+        $this->assertSame('', $component->errorMessage);
+        $this->assertFalse($component->saveSuccess);
+        $this->assertTrue($component->editMode);
     }
 }

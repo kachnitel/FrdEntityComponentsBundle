@@ -8,13 +8,20 @@ use DateTime;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Kachnitel\EntityComponentsBundle\Components\Field\DateField;
+use Kachnitel\EntityComponentsBundle\Components\Field\DefaultEditabilityResolver;
+use Kachnitel\EntityComponentsBundle\DependencyInjection\Compiler\AttachmentManagerPass;
+use Kachnitel\EntityComponentsBundle\KachnitelEntityComponentsBundle;
 use Kachnitel\EntityComponentsBundle\Tests\Field\Fixtures\FieldTestDateEntity;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\UsesClass;
 
-/**
- * @covers \Kachnitel\EntityComponentsBundle\Field\DateField
- * @group field
- * @group field-date
- */
+#[CoversClass(DateField::class)]
+#[UsesClass(DefaultEditabilityResolver::class)]
+#[UsesClass(KachnitelEntityComponentsBundle::class)]
+#[UsesClass(AttachmentManagerPass::class)]
+#[Group('field')]
+#[Group('field-date')]
 class DateFieldTest extends FieldTestCase
 {
     private function createEntity(): FieldTestDateEntity
@@ -99,6 +106,17 @@ class DateFieldTest extends FieldTestCase
         $component->mount($entity, 'createdAt');
 
         $this->assertNull($component->dateValue);
+    }
+
+    // ── canEdit() ─────────────────────────────────────────────────────────────
+
+    public function testCanEditReturnsTrueForWritableProperty(): void
+    {
+        $entity    = $this->createEntity();
+        $component = $this->getComponent();
+        $component->mount($entity, 'createdAt');
+
+        $this->assertTrue($component->canEdit());
     }
 
     // ── save() ────────────────────────────────────────────────────────────────
@@ -228,6 +246,20 @@ class DateFieldTest extends FieldTestCase
         $this->assertNull($entity->getCreatedAt());
     }
 
+    public function testSaveExitsEditModeAndSetsSuccessFlag(): void
+    {
+        $entity    = $this->createEntity();
+        $component = $this->getComponent();
+        $component->editMode = true;
+        $component->mount($entity, 'createdAt');
+
+        $component->dateValue = '2025-07-04T08:00';
+        $component->save();
+
+        $this->assertFalse($component->editMode);
+        $this->assertTrue($component->saveSuccess);
+    }
+
     public function testSaveFlushesToDatabase(): void
     {
         $entity = $this->createEntity();
@@ -294,6 +326,20 @@ class DateFieldTest extends FieldTestCase
         $this->assertNull($component->dateValue);
     }
 
+    public function testCancelEditExitsEditModeAndClearsError(): void
+    {
+        $entity    = $this->createEntity();
+        $component = $this->getComponent();
+        $component->editMode     = true;
+        $component->errorMessage = 'old error';
+        $component->mount($entity, 'createdAt');
+
+        $component->cancelEdit();
+
+        $this->assertFalse($component->editMode);
+        $this->assertSame('', $component->errorMessage);
+    }
+
     // ── getFormFieldConfig() ──────────────────────────────────────────────────
 
     public function testGetFormFieldConfigReturnsDatetimeLocalForDatetime(): void
@@ -321,5 +367,23 @@ class DateFieldTest extends FieldTestCase
         $component->mount($entity, 'meetingTime');
 
         $this->assertSame('time', $component->getFormFieldConfig()['type']);
+    }
+
+    // ── activateEditing() ─────────────────────────────────────────────────────
+
+    public function testActivateEditingClearsFeedbackState(): void
+    {
+        $entity    = $this->createEntity();
+        $component = $this->getComponent();
+        $component->mount($entity, 'createdAt');
+        $component->errorMessage = 'Stale error';
+        $component->saveSuccess  = true;
+        $component->editMode     = false;
+
+        $component->activateEditing();
+
+        $this->assertSame('', $component->errorMessage);
+        $this->assertFalse($component->saveSuccess);
+        $this->assertTrue($component->editMode);
     }
 }

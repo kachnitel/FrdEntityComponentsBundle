@@ -4,12 +4,19 @@ declare(strict_types=1);
 
 namespace Kachnitel\EntityComponentsBundle\Tests\Field;
 
+use Kachnitel\EntityComponentsBundle\Components\Field\DefaultEditabilityResolver;
 use Kachnitel\EntityComponentsBundle\Components\Field\StringField;
+use Kachnitel\EntityComponentsBundle\DependencyInjection\Compiler\AttachmentManagerPass;
+use Kachnitel\EntityComponentsBundle\KachnitelEntityComponentsBundle;
 use Kachnitel\EntityComponentsBundle\Tests\Field\Fixtures\FieldTestEntity;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\UsesClass;
 
 #[CoversClass(StringField::class)]
+#[UsesClass(DefaultEditabilityResolver::class)]
+#[UsesClass(KachnitelEntityComponentsBundle::class)]
+#[UsesClass(AttachmentManagerPass::class)]
 #[Group('field')]
 class StringFieldTest extends FieldTestCase
 {
@@ -62,7 +69,6 @@ class StringFieldTest extends FieldTestCase
         $component->editMode = false;
         $component->mount($entity, 'name');
 
-        // currentValue stays null when editMode is false — no eager read
         $this->assertNull($component->currentValue);
     }
 

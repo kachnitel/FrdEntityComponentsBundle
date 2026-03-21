@@ -5,14 +5,21 @@ declare(strict_types=1);
 namespace Kachnitel\EntityComponentsBundle\Tests\Field;
 
 use Kachnitel\EntityComponentsBundle\Components\Field\CollectionField;
+use Kachnitel\EntityComponentsBundle\Components\Field\DefaultEditabilityResolver;
+use Kachnitel\EntityComponentsBundle\DependencyInjection\Compiler\AttachmentManagerPass;
+use Kachnitel\EntityComponentsBundle\KachnitelEntityComponentsBundle;
 use Kachnitel\EntityComponentsBundle\Tests\Field\Fixtures\FieldTestOwnerEntity;
 use Kachnitel\EntityComponentsBundle\Tests\Field\Fixtures\FieldTestTagEntity;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\UsesClass;
 
-/**
- * @covers \Kachnitel\EntityComponentsBundle\Field\CollectionField
- * @group field
- * @group field-collection
- */
+#[CoversClass(CollectionField::class)]
+#[UsesClass(DefaultEditabilityResolver::class)]
+#[UsesClass(KachnitelEntityComponentsBundle::class)]
+#[UsesClass(AttachmentManagerPass::class)]
+#[Group('field')]
+#[Group('field-collection')]
 class CollectionFieldTest extends FieldTestCase
 {
     /**
@@ -66,6 +73,17 @@ class CollectionFieldTest extends FieldTestCase
         $component->mount($owner, 'tags');
 
         $this->assertSame([], $component->selectedIds);
+    }
+
+    // ── canEdit() ─────────────────────────────────────────────────────────────
+
+    public function testCanEditReturnsTrueForWritableCollectionProperty(): void
+    {
+        $fixtures  = $this->createFixtures();
+        $component = $this->getComponent();
+        $component->mount($fixtures['owner'], 'tags');
+
+        $this->assertTrue($component->canEdit());
     }
 
     // ── getSelectedItems() ────────────────────────────────────────────────────
@@ -145,12 +163,42 @@ class CollectionFieldTest extends FieldTestCase
         $component->editMode = true;
         $component->mount($fixtures['owner'], 'tags');
 
-        // Reverse the natural order
         $component->selectedIds = array_reverse($component->selectedIds);
 
         $items = $component->getSelectedItems();
         $this->assertSame($component->selectedIds[0], $items[0]['id']);
         $this->assertSame($component->selectedIds[1], $items[1]['id']);
+    }
+
+    /**
+     * With N selected IDs the implementation must use a single IN query rather
+     * than one find() per ID (N+1 prevention).
+     */
+    public function testGetSelectedItemsWithManyIdsReturnsAllItems(): void
+    {
+        $tags  = [];
+        $owner = new FieldTestOwnerEntity('Big Post');
+        $this->em->persist($owner);
+
+        for ($i = 1; $i <= 5; $i++) {
+            $tag = new FieldTestTagEntity("Tag $i");
+            $this->em->persist($tag);
+            $owner->addTag($tag);
+            $tags[] = $tag;
+        }
+        $this->em->flush();
+
+        $component = $this->getComponent();
+        $component->editMode = true;
+        $component->mount($owner, 'tags');
+
+        $items = $component->getSelectedItems();
+        $this->assertCount(5, $items);
+
+        $returnedIds = array_column($items, 'id');
+        foreach ($tags as $tag) {
+            $this->assertContains($tag->getId(), $returnedIds);
+        }
     }
 
     // ── addItem() & removeItem() ──────────────────────────────────────────────
@@ -195,6 +243,18 @@ class CollectionFieldTest extends FieldTestCase
         $this->assertNotContains($fixtures['tag1']->getId(), $component->selectedIds);
     }
 
+    public function testRemoveItemOnNonSelectedIdIsNoop(): void
+    {
+        $fixtures  = $this->createFixtures();
+        $component = $this->getComponent();
+        $component->editMode = true;
+        $component->mount($fixtures['owner'], 'tags');
+
+        $component->removeItem(99999);
+
+        $this->assertCount(2, $component->selectedIds);
+    }
+
     // ── save() ────────────────────────────────────────────────────────────────
 
     public function testSaveAddsAndRemovesEntitiesCorrectly(): void
@@ -206,7 +266,6 @@ class CollectionFieldTest extends FieldTestCase
         $component->editMode = true;
         $component->mount($fixtures['owner'], 'tags');
 
-        // Remove tag1, keep tag2, add tag3
         $component->removeItem($fixtures['tag1']->getId());
         $component->addItem($fixtures['tag3']->getId());
         $component->save();
@@ -222,6 +281,19 @@ class CollectionFieldTest extends FieldTestCase
         $this->assertNotContains($fixtures['tag1']->getId(), $reloadedIds);
         $this->assertContains($fixtures['tag2']->getId(), $reloadedIds);
         $this->assertContains($fixtures['tag3']->getId(), $reloadedIds);
+    }
+
+    public function testSaveSetsSuccessFlagAndExitsEditMode(): void
+    {
+        $fixtures  = $this->createFixtures();
+        $component = $this->getComponent();
+        $component->editMode = true;
+        $component->mount($fixtures['owner'], 'tags');
+
+        $component->save();
+
+        $this->assertFalse($component->editMode);
+        $this->assertTrue($component->saveSuccess);
     }
 
     public function testSaveThrowsForNonAssociationProperty(): void
@@ -284,6 +356,19 @@ class CollectionFieldTest extends FieldTestCase
         $this->assertContains($fixtures['tag1']->getId(), $reloadedIds);
     }
 
+    public function testCancelEditClearsErrorMessage(): void
+    {
+        $fixtures  = $this->createFixtures();
+        $component = $this->getComponent();
+        $component->editMode     = true;
+        $component->errorMessage = 'Some error';
+        $component->mount($fixtures['owner'], 'tags');
+
+        $component->cancelEdit();
+
+        $this->assertSame('', $component->errorMessage);
+    }
+
     // ── getSearchResults() ────────────────────────────────────────────────────
 
     public function testGetSearchResultsReturnsEmptyForBlankQuery(): void
@@ -308,5 +393,33 @@ class CollectionFieldTest extends FieldTestCase
         $this->assertCount(1, $results);
         $this->assertSame($fixtures['tag3']->getId(), $results[0]['id']);
         $this->assertSame('Tag 3', $results[0]['label']);
+    }
+
+    public function testGetSearchResultsReturnsEmptyForNoMatch(): void
+    {
+        $fixtures  = $this->createFixtures();
+        $component = $this->getComponent();
+        $component->mount($fixtures['owner'], 'tags');
+
+        $component->searchQuery = 'xyzzy-no-match';
+        $this->assertSame([], $component->getSearchResults());
+    }
+
+    // ── activateEditing() ─────────────────────────────────────────────────────
+
+    public function testActivateEditingClearsFeedbackState(): void
+    {
+        $fixtures  = $this->createFixtures();
+        $component = $this->getComponent();
+        $component->mount($fixtures['owner'], 'tags');
+        $component->errorMessage = 'Stale error';
+        $component->saveSuccess  = true;
+        $component->editMode     = false;
+
+        $component->activateEditing();
+
+        $this->assertSame('', $component->errorMessage);
+        $this->assertFalse($component->saveSuccess);
+        $this->assertTrue($component->editMode);
     }
 }
