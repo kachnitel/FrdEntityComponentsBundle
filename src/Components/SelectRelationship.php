@@ -19,26 +19,24 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * A reusable select component for entity relationships and enums.
  *
  * Automatically detects whether the property is an Entity or Enum and
- * loads appropriate options.
+ * loads appropriate options. All display and access configuration is
+ * grouped into a {@see SelectRelationshipOptions} DTO passed via mount().
  *
- * The field count of this class exceeds the default PHPMD threshold because
- * Symfony LiveComponent requires each configurable option to be an individually
- * annotated #[LiveProp] — they cannot be grouped into a value object without
- * losing LiveComponent serialization support. Every field here maps directly
- * to a documented, user-facing prop in the component's public API.
- *
- * @SuppressWarnings(TooManyFields)
+ * ```twig
+ * <twig:K:Entity:SelectRelationship
+ *     :entity="order"
+ *     property="region"
+ *     :options="new SelectRelationshipOptions(
+ *         placeholder: '— Region —',
+ *         role: 'ROLE_ORDER_REGION_EDIT',
+ *     )"
+ * />
+ * ```
  */
 #[AsLiveComponent('K:Entity:SelectRelationship', template: '@KachnitelEntityComponents/components/SelectRelationship.html.twig')]
 final class SelectRelationship
 {
     use DefaultActionTrait;
-
-    public function __construct(
-        private EntityManagerInterface $em,
-        private PropertyInfoExtractorInterface $propertyInfo,
-        private PropertyAccessorInterface $propertyAccessor,
-    ) {}
 
     /** Stored as string to avoid LiveProp union type limitation */
     #[LiveProp(writable: true, onUpdated: 'onValueChanged')]
@@ -53,58 +51,79 @@ final class SelectRelationship
     #[LiveProp]
     public string $property = '';
 
-    #[LiveProp]
-    public ?string $label = null;
-
-    #[LiveProp]
-    public string $placeholder = '-';
-
-    #[LiveProp]
-    public string $valueProperty = 'id';
-
-    #[LiveProp]
-    public string $displayProperty = 'name';
-
-    #[LiveProp]
-    public bool $disableEmpty = false;
-
-    /** @var array<string, mixed> Simple criteria for findBy() */
-    #[LiveProp]
-    public array $filter = [];
-
-    /** Custom repository method name (e.g., 'findByRoles') */
-    #[LiveProp]
-    public ?string $repositoryMethod = null;
-
-    /** @var array<int, mixed> Arguments for custom repository method */
-    #[LiveProp]
-    public array $repositoryArgs = [];
-
-    /** Role required to edit (select is shown) */
-    #[LiveProp]
-    public ?string $role = null;
-
-    /** Role required to view (static display shown if edit not granted but view is) */
-    #[LiveProp]
-    public ?string $viewRole = null;
-
-    #[LiveProp]
-    public bool $disabled = false;
+    #[LiveProp(hydrateWith: 'hydrateOptions', dehydrateWith: 'dehydrateOptions')]
+    public SelectRelationshipOptions $options;
 
     private ?string $targetClass = null;
     private bool $isEnum = false;
     private ?object $entity = null;
 
-    public function mount(object $entity, string $property): void
-    {
+    public function __construct(
+        private EntityManagerInterface $em,
+        private PropertyInfoExtractorInterface $propertyInfo,
+        private PropertyAccessorInterface $propertyAccessor,
+    ) {
+        $this->options = new SelectRelationshipOptions();
+    }
+
+    public function mount(
+        object $entity,
+        string $property,
+        SelectRelationshipOptions $options = new SelectRelationshipOptions(),
+    ): void {
         $this->entityClass = get_class($entity);
-        $this->entityId = (string) $this->propertyAccessor->getValue($entity, 'id');
-        $this->property = $property;
-        $this->entity = $entity;
+        $this->entityId    = (string) $this->propertyAccessor->getValue($entity, 'id');
+        $this->property    = $property;
+        $this->options     = $options;
+        $this->entity      = $entity;
 
         $this->resolveTargetType();
         $this->initializeValue();
     }
+
+    // ── LiveProp hydration ────────────────────────────────────────────────────
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function hydrateOptions(array $data): SelectRelationshipOptions
+    {
+        return new SelectRelationshipOptions(
+            placeholder:      (string) ($data['placeholder'] ?? '-'),
+            valueProperty:    (string) ($data['valueProperty'] ?? 'id'),
+            displayProperty:  (string) ($data['displayProperty'] ?? 'name'),
+            disableEmpty:     (bool) ($data['disableEmpty'] ?? false),
+            filter:           (array) ($data['filter'] ?? []),
+            repositoryMethod: isset($data['repositoryMethod']) ? (string) $data['repositoryMethod'] : null,
+            repositoryArgs:   (array) ($data['repositoryArgs'] ?? []),
+            role:             isset($data['role']) ? (string) $data['role'] : null,
+            viewRole:         isset($data['viewRole']) ? (string) $data['viewRole'] : null,
+            disabled:         (bool) ($data['disabled'] ?? false),
+            label:            isset($data['label']) ? (string) $data['label'] : null,
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function dehydrateOptions(SelectRelationshipOptions $options): array
+    {
+        return [
+            'placeholder'      => $options->placeholder,
+            'valueProperty'    => $options->valueProperty,
+            'displayProperty'  => $options->displayProperty,
+            'disableEmpty'     => $options->disableEmpty,
+            'filter'           => $options->filter,
+            'repositoryMethod' => $options->repositoryMethod,
+            'repositoryArgs'   => $options->repositoryArgs,
+            'role'             => $options->role,
+            'viewRole'         => $options->viewRole,
+            'disabled'         => $options->disabled,
+            'label'            => $options->label,
+        ];
+    }
+
+    // ── Actions ───────────────────────────────────────────────────────────────
 
     public function onValueChanged(): void
     {
@@ -130,6 +149,8 @@ final class SelectRelationship
         $this->em->flush();
     }
 
+    // ── Template helpers ──────────────────────────────────────────────────────
+
     /**
      * @return array<int, object|BackedEnum>
      */
@@ -148,12 +169,12 @@ final class SelectRelationship
         /** @phpstan-ignore argument.templateType */
         $repository = $this->em->getRepository($this->targetClass);
 
-        if ($this->repositoryMethod !== null) {
-            return $repository->{$this->repositoryMethod}(...$this->repositoryArgs);
+        if ($this->options->repositoryMethod !== null) {
+            return $repository->{$this->options->repositoryMethod}(...$this->options->repositoryArgs);
         }
 
-        if (!empty($this->filter)) {
-            return $repository->findBy($this->filter);
+        if (!empty($this->options->filter)) {
+            return $repository->findBy($this->options->filter);
         }
 
         return $repository->findAll();
@@ -165,7 +186,7 @@ final class SelectRelationship
             return (string) $option->value;
         }
 
-        return (string) $this->propertyAccessor->getValue($option, $this->valueProperty);
+        return (string) $this->propertyAccessor->getValue($option, $this->options->valueProperty);
     }
 
     public function getOptionLabel(object $option): string
@@ -174,10 +195,11 @@ final class SelectRelationship
             if (method_exists($option, 'displayValue')) {
                 return $option->displayValue();
             }
+
             return $option->name;
         }
 
-        return (string) $this->propertyAccessor->getValue($option, $this->displayProperty);
+        return (string) $this->propertyAccessor->getValue($option, $this->options->displayProperty);
     }
 
     public function isSelected(object $option): bool
@@ -190,7 +212,7 @@ final class SelectRelationship
         $currentValue = $this->propertyAccessor->getValue($this->getEntity(), $this->property);
 
         if ($currentValue === null) {
-            return $this->placeholder;
+            return $this->options->placeholder;
         }
 
         return $this->getOptionLabel($currentValue);
@@ -199,6 +221,7 @@ final class SelectRelationship
     public function isEnumType(): bool
     {
         $this->resolveTargetType();
+
         return $this->isEnum;
     }
 
@@ -219,13 +242,13 @@ final class SelectRelationship
         return $this->entity;
     }
 
-    /**
-     * Expose entity for template (checks like entity.isDeleted)
-     */
+    /** Expose entity for template (e.g. entity.isDeleted checks) */
     public function getEntityObject(): object
     {
         return $this->getEntity();
     }
+
+    // ── Private helpers ───────────────────────────────────────────────────────
 
     private function resolveTargetType(): void
     {
@@ -237,11 +260,12 @@ final class SelectRelationship
 
         if ($className === null) {
             $this->resolveFromReflection($this->entityClass);
+
             return;
         }
 
         $this->targetClass = $className;
-        $this->isEnum = enum_exists($className);
+        $this->isEnum      = enum_exists($className);
     }
 
     private function resolveClassNameFromPropertyInfo(): ?string
@@ -280,11 +304,11 @@ final class SelectRelationship
         }
 
         $reflectionProperty = $reflectionClass->getProperty($this->property);
-        $type = $reflectionProperty->getType();
+        $type               = $reflectionProperty->getType();
 
         if ($type instanceof ReflectionNamedType && !$type->isBuiltin()) {
             $this->targetClass = $type->getName();
-            $this->isEnum = enum_exists($this->targetClass);
+            $this->isEnum      = enum_exists($this->targetClass);
         }
     }
 
@@ -297,7 +321,7 @@ final class SelectRelationship
         } elseif ($currentValue instanceof BackedEnum) {
             $this->value = (string) $currentValue->value;
         } else {
-            $this->value = (string) $this->propertyAccessor->getValue($currentValue, $this->valueProperty);
+            $this->value = (string) $this->propertyAccessor->getValue($currentValue, $this->options->valueProperty);
         }
     }
 }

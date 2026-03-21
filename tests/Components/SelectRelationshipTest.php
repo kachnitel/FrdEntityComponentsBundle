@@ -7,6 +7,7 @@ namespace Kachnitel\EntityComponentsBundle\Tests\Components;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Kachnitel\EntityComponentsBundle\Components\SelectRelationship;
+use Kachnitel\EntityComponentsBundle\Components\SelectRelationshipOptions;
 use PHPUnit\Framework\MockObject\MockObject;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\PropertyInfo\PropertyInfoExtractorInterface;
@@ -58,23 +59,23 @@ class SelectRelationshipTest extends ComponentTestCase
         $this->assertNotNull($component);
     }
 
-    public function testSelectRelationshipHasDefaultProperties(): void
+    public function testSelectRelationshipHasDefaultOptions(): void
     {
         $component = $this->factory->get('K:Entity:SelectRelationship');
 
-        $this->assertSame('-', $component->placeholder);
-        $this->assertSame('id', $component->valueProperty);
-        $this->assertSame('name', $component->displayProperty);
-        $this->assertFalse($component->disableEmpty);
-        $this->assertFalse($component->disabled);
-        $this->assertNull($component->role);
-        $this->assertNull($component->viewRole);
-        $this->assertNull($component->label);
-        $this->assertNull($component->repositoryMethod);
-        $this->assertIsArray($component->filter);
-        $this->assertEmpty($component->filter);
-        $this->assertIsArray($component->repositoryArgs);
-        $this->assertEmpty($component->repositoryArgs);
+        $this->assertSame('-', $component->options->placeholder);
+        $this->assertSame('id', $component->options->valueProperty);
+        $this->assertSame('name', $component->options->displayProperty);
+        $this->assertFalse($component->options->disableEmpty);
+        $this->assertFalse($component->options->disabled);
+        $this->assertNull($component->options->role);
+        $this->assertNull($component->options->viewRole);
+        $this->assertNull($component->options->label);
+        $this->assertNull($component->options->repositoryMethod);
+        $this->assertIsArray($component->options->filter);
+        $this->assertEmpty($component->options->filter);
+        $this->assertIsArray($component->options->repositoryArgs);
+        $this->assertEmpty($component->options->repositoryArgs);
     }
 
     public function testSelectRelationshipValueProperty(): void
@@ -89,7 +90,7 @@ class SelectRelationshipTest extends ComponentTestCase
 
     public function testMountInitializesComponentWithEntity(): void
     {
-        $entity = new TestEntity(42);
+        $entity        = new TestEntity(42);
         $relatedEntity = new TestRelatedEntity(5, 'Test Related');
 
         /** @var PropertyAccessorInterface&MockObject $propertyAccessor */
@@ -102,6 +103,7 @@ class SelectRelationshipTest extends ComponentTestCase
                 if ($property === 'related' && $object instanceof TestEntity) {
                     return $relatedEntity;
                 }
+
                 return null;
             });
 
@@ -121,6 +123,32 @@ class SelectRelationshipTest extends ComponentTestCase
         $this->assertSame('5', $component->value);
     }
 
+    public function testMountAcceptsOptionsDto(): void
+    {
+        $entity = new TestEntity(42);
+
+        /** @var PropertyAccessorInterface&MockObject $propertyAccessor */
+        $propertyAccessor = $this->createMock(PropertyAccessorInterface::class);
+        $propertyAccessor->method('getValue')
+            ->willReturnCallback(function ($object, $property) {
+                return $property === 'id' ? $object->getId() : null;
+            });
+
+        /** @var PropertyInfoExtractorInterface&MockObject $propertyInfo */
+        $propertyInfo = $this->createMock(PropertyInfoExtractorInterface::class);
+        $this->mockPropertyInfoForClass($propertyInfo, TestRelatedEntity::class);
+
+        /** @var EntityManagerInterface&MockObject $em */
+        $em = $this->createMock(EntityManagerInterface::class);
+
+        $options   = new SelectRelationshipOptions(placeholder: 'Select...', role: 'ROLE_ADMIN');
+        $component = new SelectRelationship($em, $propertyInfo, $propertyAccessor);
+        $component->mount($entity, 'related', $options);
+
+        $this->assertSame('Select...', $component->options->placeholder);
+        $this->assertSame('ROLE_ADMIN', $component->options->role);
+    }
+
     public function testMountInitializesNullValueWhenPropertyIsNull(): void
     {
         $entity = new TestEntity(42);
@@ -132,6 +160,7 @@ class SelectRelationshipTest extends ComponentTestCase
                 if ($property === 'id') {
                     return $object->getId();
                 }
+
                 return null;
             });
 
@@ -162,6 +191,7 @@ class SelectRelationshipTest extends ComponentTestCase
                 if ($property === 'status') {
                     return TestStatus::Active;
                 }
+
                 return null;
             });
 
@@ -189,6 +219,7 @@ class SelectRelationshipTest extends ComponentTestCase
                 if ($property === 'id') {
                     return $object->getId();
                 }
+
                 return TestStatus::Active;
             });
 
@@ -210,7 +241,7 @@ class SelectRelationshipTest extends ComponentTestCase
 
     public function testGetOptionsReturnsEntitiesFromRepository(): void
     {
-        $entity = new TestEntity(42);
+        $entity   = new TestEntity(42);
         $related1 = new TestRelatedEntity(1, 'First');
         $related2 = new TestRelatedEntity(2, 'Second');
 
@@ -221,6 +252,7 @@ class SelectRelationshipTest extends ComponentTestCase
                 if ($property === 'id') {
                     return $object->getId();
                 }
+
                 return null;
             });
 
@@ -248,7 +280,7 @@ class SelectRelationshipTest extends ComponentTestCase
 
     public function testGetOptionsUsesFilterWhenProvided(): void
     {
-        $entity = new TestEntity(42);
+        $entity   = new TestEntity(42);
         $related1 = new TestRelatedEntity(1, 'Active One');
 
         /** @var PropertyAccessorInterface&MockObject $propertyAccessor */
@@ -258,6 +290,7 @@ class SelectRelationshipTest extends ComponentTestCase
                 if ($property === 'id') {
                     return $object->getId();
                 }
+
                 return null;
             });
 
@@ -276,18 +309,18 @@ class SelectRelationshipTest extends ComponentTestCase
         $em = $this->createMock(EntityManagerInterface::class);
         $em->method('getRepository')->willReturn($repository);
 
+        $options   = new SelectRelationshipOptions(filter: ['active' => true]);
         $component = new SelectRelationship($em, $propertyInfo, $propertyAccessor);
-        $component->mount($entity, 'related');
-        $component->filter = ['active' => true];
+        $component->mount($entity, 'related', $options);
 
-        $options = $component->getOptions();
+        $result = $component->getOptions();
 
-        $this->assertCount(1, $options);
+        $this->assertCount(1, $result);
     }
 
     public function testGetOptionsUsesCustomRepositoryMethod(): void
     {
-        $entity = new TestEntity(42);
+        $entity   = new TestEntity(42);
         $related1 = new TestRelatedEntity(1, 'Manager');
 
         /** @var PropertyAccessorInterface&MockObject $propertyAccessor */
@@ -297,6 +330,7 @@ class SelectRelationshipTest extends ComponentTestCase
                 if ($property === 'id') {
                     return $object->getId();
                 }
+
                 return null;
             });
 
@@ -304,11 +338,7 @@ class SelectRelationshipTest extends ComponentTestCase
         $propertyInfo = $this->createMock(PropertyInfoExtractorInterface::class);
         $this->mockPropertyInfoForClass($propertyInfo, TestRelatedEntity::class);
 
-        /** @var EntityRepository<TestRelatedEntity>&MockObject $repository */
-        // $repository = $this->getMockBuilder(EntityRepository::class)
-        //     ->disableOriginalConstructor()
-        //     ->addMethods(['findByRoles'])
-        //     ->getMock();
+        /** @var TestRepository&MockObject $repository */
         $repository = $this->createMock(TestRepository::class);
         $repository->method('findByRoles')
             ->with(['ROLE_MANAGER'])
@@ -318,14 +348,13 @@ class SelectRelationshipTest extends ComponentTestCase
         $em = $this->createMock(EntityManagerInterface::class);
         $em->method('getRepository')->willReturn($repository);
 
+        $options   = new SelectRelationshipOptions(repositoryMethod: 'findByRoles', repositoryArgs: [['ROLE_MANAGER']]);
         $component = new SelectRelationship($em, $propertyInfo, $propertyAccessor);
-        $component->mount($entity, 'related');
-        $component->repositoryMethod = 'findByRoles';
-        $component->repositoryArgs = [['ROLE_MANAGER']];
+        $component->mount($entity, 'related', $options);
 
-        $options = $component->getOptions();
+        $result = $component->getOptions();
 
-        $this->assertCount(1, $options);
+        $this->assertCount(1, $result);
     }
 
     public function testGetOptionValueReturnsEnumValue(): void
@@ -423,7 +452,7 @@ class SelectRelationshipTest extends ComponentTestCase
 
     public function testIsSelectedReturnsTrueForMatchingValue(): void
     {
-        $entity = new TestEntity(42);
+        $entity        = new TestEntity(42);
         $relatedEntity = new TestRelatedEntity(5, 'Test');
 
         /** @var PropertyAccessorInterface&MockObject $propertyAccessor */
@@ -436,6 +465,7 @@ class SelectRelationshipTest extends ComponentTestCase
                 if ($property === 'related') {
                     return $relatedEntity;
                 }
+
                 return null;
             });
 
@@ -454,9 +484,9 @@ class SelectRelationshipTest extends ComponentTestCase
 
     public function testIsSelectedReturnsFalseForNonMatchingValue(): void
     {
-        $entity = new TestEntity(42);
+        $entity        = new TestEntity(42);
         $relatedEntity = new TestRelatedEntity(5, 'Test');
-        $otherEntity = new TestRelatedEntity(10, 'Other');
+        $otherEntity   = new TestRelatedEntity(10, 'Other');
 
         /** @var PropertyAccessorInterface&MockObject $propertyAccessor */
         $propertyAccessor = $this->createMock(PropertyAccessorInterface::class);
@@ -468,6 +498,7 @@ class SelectRelationshipTest extends ComponentTestCase
                 if ($property === 'related') {
                     return $relatedEntity;
                 }
+
                 return null;
             });
 
@@ -495,6 +526,7 @@ class SelectRelationshipTest extends ComponentTestCase
                 if ($property === 'id') {
                     return $object->getId();
                 }
+
                 return TestStatus::Active;
             });
 
@@ -522,6 +554,7 @@ class SelectRelationshipTest extends ComponentTestCase
                 if ($property === 'id') {
                     return $object->getId();
                 }
+
                 return null;
             });
 
@@ -549,6 +582,7 @@ class SelectRelationshipTest extends ComponentTestCase
                 if ($property === 'id') {
                     return $object->getId();
                 }
+
                 return null;
             });
 
@@ -559,16 +593,16 @@ class SelectRelationshipTest extends ComponentTestCase
         /** @var EntityManagerInterface&MockObject $em */
         $em = $this->createMock(EntityManagerInterface::class);
 
+        $options   = new SelectRelationshipOptions(placeholder: 'Select...');
         $component = new SelectRelationship($em, $propertyInfo, $propertyAccessor);
-        $component->placeholder = 'Select...';
-        $component->mount($entity, 'related');
+        $component->mount($entity, 'related', $options);
 
         $this->assertSame('Select...', $component->getCurrentDisplayValue());
     }
 
     public function testGetCurrentDisplayValueReturnsEntityLabel(): void
     {
-        $entity = new TestEntity(42);
+        $entity        = new TestEntity(42);
         $relatedEntity = new TestRelatedEntity(5, 'Related Name');
 
         /** @var PropertyAccessorInterface&MockObject $propertyAccessor */
@@ -584,6 +618,7 @@ class SelectRelationshipTest extends ComponentTestCase
                 if ($property === 'name') {
                     return 'Related Name';
                 }
+
                 return null;
             });
 
@@ -602,7 +637,7 @@ class SelectRelationshipTest extends ComponentTestCase
 
     public function testOnValueChangedUpdatesEntityWithRelatedEntity(): void
     {
-        $entity = new TestEntityWithSetter(42);
+        $entity     = new TestEntityWithSetter(42);
         $newRelated = new TestRelatedEntity(10, 'New Related');
 
         /** @var PropertyAccessorInterface&MockObject $propertyAccessor */
@@ -612,6 +647,7 @@ class SelectRelationshipTest extends ComponentTestCase
                 if ($property === 'id') {
                     return $object->getId();
                 }
+
                 return null;
             });
 
@@ -647,6 +683,7 @@ class SelectRelationshipTest extends ComponentTestCase
                 if ($property === 'id') {
                     return $object->getId();
                 }
+
                 return null;
             });
 
@@ -678,6 +715,7 @@ class SelectRelationshipTest extends ComponentTestCase
                 if ($property === 'id') {
                     return $object->getId();
                 }
+
                 return null;
             });
 
@@ -710,9 +748,9 @@ class SelectRelationshipTest extends ComponentTestCase
         $em = $this->createMock(EntityManagerInterface::class);
         $em->method('find')->willReturn(null);
 
-        $component = new SelectRelationship($em, $propertyInfo, $propertyAccessor);
+        $component            = new SelectRelationship($em, $propertyInfo, $propertyAccessor);
         $component->entityClass = TestEntity::class;
-        $component->entityId = '999';
+        $component->entityId  = '999';
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Entity ' . TestEntity::class . ' with ID 999 not found');
@@ -731,6 +769,7 @@ class SelectRelationshipTest extends ComponentTestCase
                 if ($property === 'id') {
                     return $object->getId();
                 }
+
                 return null;
             });
 
@@ -758,6 +797,7 @@ class SelectRelationshipTest extends ComponentTestCase
                 if ($property === 'id') {
                     return $object->getId();
                 }
+
                 return null;
             });
 
@@ -785,6 +825,7 @@ class SelectRelationshipTest extends ComponentTestCase
                 if ($property === 'id') {
                     return $object->getId();
                 }
+
                 return null;
             });
 
@@ -819,6 +860,7 @@ class SelectRelationshipTest extends ComponentTestCase
                 if ($property === 'id') {
                     return $object->getId();
                 }
+
                 return null;
             });
 
@@ -840,7 +882,7 @@ class SelectRelationshipTest extends ComponentTestCase
         $this->assertTrue(true);
     }
 
-    public function testCustomValueAndDisplayProperties(): void
+    public function testCustomValueAndDisplayPropertiesViaOptions(): void
     {
         $entity = new TestRelatedEntity(123, 'Custom Name');
 
@@ -854,6 +896,7 @@ class SelectRelationshipTest extends ComponentTestCase
                 if ($property === 'title') {
                     return 'Custom Title';
                 }
+
                 return null;
             });
 
@@ -863,16 +906,58 @@ class SelectRelationshipTest extends ComponentTestCase
         /** @var EntityManagerInterface&MockObject $em */
         $em = $this->createMock(EntityManagerInterface::class);
 
+        $options   = new SelectRelationshipOptions(valueProperty: 'code', displayProperty: 'title');
         $component = new SelectRelationship($em, $propertyInfo, $propertyAccessor);
-        $component->valueProperty = 'code';
-        $component->displayProperty = 'title';
+        $component->options = $options;
 
         $this->assertSame('ABC123', $component->getOptionValue($entity));
         $this->assertSame('Custom Title', $component->getOptionLabel($entity));
     }
+
+    public function testHydrateOptionsRoundTrip(): void
+    {
+        /** @var PropertyAccessorInterface&MockObject $propertyAccessor */
+        $propertyAccessor = $this->createMock(PropertyAccessorInterface::class);
+
+        /** @var PropertyInfoExtractorInterface&MockObject $propertyInfo */
+        $propertyInfo = $this->createMock(PropertyInfoExtractorInterface::class);
+
+        /** @var EntityManagerInterface&MockObject $em */
+        $em = $this->createMock(EntityManagerInterface::class);
+
+        $original = new SelectRelationshipOptions(
+            placeholder: 'Pick one',
+            valueProperty: 'code',
+            displayProperty: 'label',
+            disableEmpty: true,
+            filter: ['active' => true],
+            repositoryMethod: 'findActive',
+            repositoryArgs: [['a', 'b']],
+            role: 'ROLE_EDITOR',
+            viewRole: 'ROLE_USER',
+            disabled: false,
+            label: 'My Label',
+        );
+
+        $component  = new SelectRelationship($em, $propertyInfo, $propertyAccessor);
+        $dehydrated = $component->dehydrateOptions($original);
+        $hydrated   = $component->hydrateOptions($dehydrated);
+
+        $this->assertSame($original->placeholder, $hydrated->placeholder);
+        $this->assertSame($original->valueProperty, $hydrated->valueProperty);
+        $this->assertSame($original->displayProperty, $hydrated->displayProperty);
+        $this->assertSame($original->disableEmpty, $hydrated->disableEmpty);
+        $this->assertSame($original->filter, $hydrated->filter);
+        $this->assertSame($original->repositoryMethod, $hydrated->repositoryMethod);
+        $this->assertSame($original->repositoryArgs, $hydrated->repositoryArgs);
+        $this->assertSame($original->role, $hydrated->role);
+        $this->assertSame($original->viewRole, $hydrated->viewRole);
+        $this->assertSame($original->disabled, $hydrated->disabled);
+        $this->assertSame($original->label, $hydrated->label);
+    }
 }
 
-// Test fixtures
+// Test fixtures (unchanged)
 
 class TestEntity
 {
@@ -951,27 +1036,26 @@ class TestRepository extends EntityRepository
 {
     public function findByRoles(array $roles): array
     {
-        // Dummy implementation for testing custom repository method
         return [];
     }
 }
 
 enum TestStatus: string
 {
-    case Active = 'active';
+    case Active   = 'active';
     case Inactive = 'inactive';
-    case Pending = 'pending';
+    case Pending  = 'pending';
 }
 
 enum TestStatusWithDisplay: string
 {
-    case Active = 'active';
+    case Active   = 'active';
     case Inactive = 'inactive';
 
     public function displayValue(): string
     {
         return match ($this) {
-            self::Active => 'Is Active',
+            self::Active   => 'Is Active',
             self::Inactive => 'Is Inactive',
         };
     }
