@@ -7,9 +7,9 @@ use Exception;
 use Kachnitel\EntityComponentsBundle\Interface\AttachableInterface;
 use Kachnitel\EntityComponentsBundle\Interface\AttachmentInterface;
 use Kachnitel\EntityComponentsBundle\Interface\FileHandlerInterface;
+use Kachnitel\EntityComponentsBundle\Trait\EntityLiveComponentTrait;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\FormInterface;
@@ -39,12 +39,7 @@ final class AttachmentManager extends AbstractController
     use DefaultActionTrait;
     use ComponentWithFormTrait;
     use ComponentToolsTrait;
-
-    #[LiveProp]
-    public int $entityId;
-
-    #[LiveProp]
-    public string $entityClass;
+    use EntityLiveComponentTrait;
 
     #[LiveProp]
     public string $attachmentClass;
@@ -70,22 +65,11 @@ final class AttachmentManager extends AbstractController
         string $attachmentClass,
         AttachmentManagerOptions $options = new AttachmentManagerOptions(),
     ): void {
-        if (!method_exists($entity, 'getId')) {
-            throw new \InvalidArgumentException('Entity must have a getId() method.');
-        }
-
         if (!is_a($attachmentClass, AttachmentInterface::class, true)) {
             throw new \InvalidArgumentException("Attachment class must implement AttachmentInterface. {$attachmentClass} does not.");
         }
 
-        // Store the real class name (handles Doctrine proxies)
-        $reflection = new \ReflectionClass($entity);
-        while ($reflection->getParentClass() && str_contains($reflection->getName(), 'Proxies')) {
-            $reflection = $reflection->getParentClass();
-        }
-
-        $this->entityClass     = $reflection->getName();
-        $this->entityId        = $entity->getId();
+        $this->mountEntity($entity);
         $this->attachmentClass = $attachmentClass;
         $this->options         = $options;
         $this->entity          = $entity;
@@ -122,17 +106,7 @@ final class AttachmentManager extends AbstractController
     public function getEntity(): AttachableInterface
     {
         if (!$this->entity) {
-            $entity = $this->entityManager->getRepository($this->entityClass)->find($this->entityId);
-
-            if (!$entity) {
-                throw new NotFoundHttpException("{$this->entityClass} with id {$this->entityId} not found.");
-            }
-
-            if (!$entity instanceof AttachableInterface) {
-                throw new \InvalidArgumentException("{$this->entityClass} must implement AttachableInterface.");
-            }
-
-            $this->entity = $entity;
+            $this->entity = $this->loadEntity(AttachableInterface::class);
         }
 
         return $this->entity;
@@ -231,8 +205,8 @@ final class AttachmentManager extends AbstractController
 
     protected function handleFiles(array $files): void
     {
-        $entity       = $this->getEntity();
-        $adderMethod  = $this->getMethod('add');
+        $entity      = $this->getEntity();
+        $adderMethod = $this->getMethod('add');
 
         foreach ($files as $file) {
             if ($file === null) {

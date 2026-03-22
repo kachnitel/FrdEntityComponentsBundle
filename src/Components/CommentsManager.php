@@ -6,12 +6,12 @@ use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Kachnitel\EntityComponentsBundle\Interface\CommentableInterface;
 use Kachnitel\EntityComponentsBundle\Interface\CommentInterface;
+use Kachnitel\EntityComponentsBundle\Trait\EntityLiveComponentTrait;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
@@ -20,17 +20,22 @@ use Symfony\UX\LiveComponent\ComponentWithFormTrait;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Symfony\UX\TwigComponent\Attribute\ExposeInTemplate;
 
+/**
+ * Live Component for managing comments on any CommentableInterface entity.
+ *
+ * The coupling count (CBO) of this class is inherently high because it integrates
+ * Doctrine, Symfony Form, LiveComponent, Security, and HTTP — all of which are
+ * required to deliver a self-contained comment-thread UI component. Each dependency
+ * serves a distinct, non-removable role in the component's feature set.
+ *
+ * @SuppressWarnings(CouplingBetweenObjects)
+ */
 #[AsLiveComponent('K:Entity:CommentsManager', template: '@KachnitelEntityComponents/components/CommentsManager.html.twig')]
 final class CommentsManager extends AbstractController
 {
     use DefaultActionTrait;
     use ComponentWithFormTrait;
-
-    #[LiveProp]
-    public int $entityId;
-
-    #[LiveProp]
-    public string $entityClass;
+    use EntityLiveComponentTrait;
 
     #[LiveProp]
     public string $commentClass;
@@ -58,22 +63,11 @@ final class CommentsManager extends AbstractController
         string $commentClass,
         CommentsManagerOptions $options = new CommentsManagerOptions(),
     ): void {
-        if (!method_exists($entity, 'getId')) {
-            throw new \InvalidArgumentException('Entity must have a getId() method.');
-        }
-
         if (!is_a($commentClass, CommentInterface::class, true)) {
             throw new \InvalidArgumentException("Comment class must implement CommentInterface. {$commentClass} does not.");
         }
 
-        // Store the real class name (handles Doctrine proxies)
-        $reflection = new \ReflectionClass($entity);
-        while ($reflection->getParentClass() && str_contains($reflection->getName(), 'Proxies')) {
-            $reflection = $reflection->getParentClass();
-        }
-
-        $this->entityClass  = $reflection->getName();
-        $this->entityId     = $entity->getId();
+        $this->mountEntity($entity);
         $this->commentClass = $commentClass;
         $this->options      = $options;
         $this->entity       = $entity;
@@ -108,17 +102,7 @@ final class CommentsManager extends AbstractController
     public function getEntity(): CommentableInterface
     {
         if (!$this->entity) {
-            $entity = $this->entityManager->getRepository($this->entityClass)->find($this->entityId);
-
-            if (!$entity) {
-                throw new NotFoundHttpException("{$this->entityClass} with id {$this->entityId} not found.");
-            }
-
-            if (!$entity instanceof CommentableInterface) {
-                throw new \InvalidArgumentException("{$this->entityClass} must implement CommentableInterface.");
-            }
-
-            $this->entity = $entity;
+            $this->entity = $this->loadEntity(CommentableInterface::class);
         }
 
         return $this->entity;

@@ -31,6 +31,29 @@
         <exclude name="ShortVariable" />
         <exclude name="LongVariable" />
     </rule>
-    <rule ref="rulesets/design.xml" />
+
+    <!--
+        Design rules
+          — CouplingBetweenObjects threshold raised from the default 13 to 16.
+
+        Rationale: PHP 8 attributes (#[AsLiveComponent], #[LiveProp], #[LiveAction],
+        #[LiveArg], #[ExposeInTemplate]) are real PHP classes.
+
+        PHPMD does not yet support pattern-based exclusions for specific classes
+        (https://github.com/phpmd/phpmd/issues/637); raising the threshold is the
+        only ruleset-level option available.
+    -->
+    <rule ref="rulesets/design.xml">
+        <exclude name="CouplingBetweenObjects" />
+    </rule>
+    <rule ref="rulesets/design.xml/CouplingBetweenObjects">
+        <properties>
+            <property name="minimum" value="16"
+                      description="Raised from 13: PHP 8 attribute classes
+                                   (LiveProp, LiveAction, LiveArg, AsLiveComponent,
+                                   ExposeInTemplate) each count as a dependency." />
+        </properties>
+    </rule>
+
     <rule ref="rulesets/controversial.xml" />
 </ruleset>

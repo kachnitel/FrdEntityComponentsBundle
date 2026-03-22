@@ -5,7 +5,7 @@ namespace Kachnitel\EntityComponentsBundle\Components;
 use Doctrine\ORM\EntityManagerInterface;
 use Kachnitel\EntityComponentsBundle\Interface\TaggableInterface;
 use Kachnitel\EntityComponentsBundle\Interface\TagInterface;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Kachnitel\EntityComponentsBundle\Trait\EntityLiveComponentTrait;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
@@ -19,12 +19,7 @@ final class TagManager
 {
     use DefaultActionTrait;
     use ComponentToolsTrait;
-
-    #[LiveProp]
-    public int $entityId;
-
-    #[LiveProp]
-    public string $entityClass;
+    use EntityLiveComponentTrait;
 
     #[LiveProp]
     public string $tagClass;
@@ -47,41 +42,20 @@ final class TagManager
 
     public function mount(TaggableInterface $entity, string $tagClass): void
     {
-        if (!method_exists($entity, 'getId')) {
-            throw new \InvalidArgumentException('Entity must have a getId() method.');
-        }
-
         if (!is_a($tagClass, TagInterface::class, true)) {
             throw new \InvalidArgumentException("Tag class must implement TagInterface. {$tagClass} does not.");
         }
 
-        // Store the real class name (handles Doctrine proxies)
-        $reflection = new \ReflectionClass($entity);
-        while ($reflection->getParentClass() && str_contains($reflection->getName(), 'Proxies')) {
-            $reflection = $reflection->getParentClass();
-        }
-
-        $this->entityClass = $reflection->getName();
-        $this->entityId = $entity->getId();
+        $this->mountEntity($entity);
         $this->tagClass = $tagClass;
-        $this->entity = $entity;
-        $this->tagIds = array_map(fn($tag) => $tag->getId(), $entity->getTags()->toArray());
+        $this->entity   = $entity;
+        $this->tagIds   = array_map(fn($tag) => $tag->getId(), $entity->getTags()->toArray());
     }
 
     public function getEntity(): TaggableInterface
     {
         if (!$this->entity) {
-            $entity = $this->entityManager->getRepository($this->entityClass)->find($this->entityId);
-
-            if (!$entity) {
-                throw new NotFoundHttpException("{$this->entityClass} with id {$this->entityId} not found.");
-            }
-
-            if (!$entity instanceof TaggableInterface) {
-                throw new \InvalidArgumentException("{$this->entityClass} must implement TaggableInterface.");
-            }
-
-            $this->entity = $entity;
+            $this->entity = $this->loadEntity(TaggableInterface::class);
         }
 
         return $this->entity;
