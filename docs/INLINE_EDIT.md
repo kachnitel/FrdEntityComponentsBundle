@@ -169,6 +169,18 @@ The read-only cell is rendered by `_display.html.twig`. Override it in your app 
 
 The template receives a single `value` variable containing the current property value.
 
+The bundle registers an `is object` Twig test you can use to safely guard against non-stringable objects before echoing `{{ value }}`:
+
+```twig
+{% if value is object %}
+    {{ value.name ?? value.id }}
+{% else %}
+    {{ value }}
+{% endif %}
+```
+
+This is what the default `_display.html.twig` uses internally to dispatch between entity objects, enums, scalars, and null without risking a "could not be converted to string" error.
+
 </details>
 
 <details>

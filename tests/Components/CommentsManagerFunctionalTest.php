@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Kachnitel\EntityComponentsBundle\Tests\Components;
 
 use Kachnitel\EntityComponentsBundle\Components\CommentsManager;
+use Kachnitel\EntityComponentsBundle\Components\CommentsManagerOptions;
 use Kachnitel\EntityComponentsBundle\Tests\Components\Fixtures\ComponentTestComment;
 use Kachnitel\EntityComponentsBundle\Tests\Components\Fixtures\ComponentTestCommentableEntity;
 use Kachnitel\EntityComponentsBundle\Tests\Components\Fixtures\ComponentTestTag;
@@ -75,6 +76,17 @@ class CommentsManagerFunctionalTest extends ComponentFunctionalTestCase
         $this->assertSame(ComponentTestComment::class, $component->commentClass);
     }
 
+    public function testMountAcceptsOptionsDto(): void
+    {
+        $entity    = $this->createEntity();
+        $component = $this->getComponent();
+        $options   = new CommentsManagerOptions(readOnly: true, property: 'remarks');
+        $component->mount($entity, ComponentTestComment::class, $options);
+
+        $this->assertTrue($component->options->readOnly);
+        $this->assertSame('remarks', $component->options->property);
+    }
+
     public function testMountThrowsForEntityWithoutGetId(): void
     {
         $badEntity = new class implements \Kachnitel\EntityComponentsBundle\Interface\CommentableInterface {
@@ -124,7 +136,6 @@ class CommentsManagerFunctionalTest extends ComponentFunctionalTestCase
         $component = $this->getComponent();
         $component->mount($entity, ComponentTestComment::class);
 
-        // Simulate post-hydrate state: clear the cached entity reference
         $ref = new \ReflectionProperty($component, 'entity');
         $ref->setAccessible(true);
         $ref->setValue($component, null);
@@ -154,9 +165,7 @@ class CommentsManagerFunctionalTest extends ComponentFunctionalTestCase
         $component = $this->getComponent();
         $component->mount($entity, ComponentTestComment::class);
 
-        $comments = $component->getComments();
-
-        $this->assertCount(3, $comments);
+        $this->assertCount(3, $component->getComments());
     }
 
     public function testGetCommentsReturnsEmptyArrayWhenNoComments(): void
@@ -196,7 +205,6 @@ class CommentsManagerFunctionalTest extends ComponentFunctionalTestCase
         $component = $this->getComponent();
         $component->mount($entity, ComponentTestComment::class);
 
-        // ComponentTestComment::MAX_TEXT_LENGTH = 500
         $this->assertSame(500, $component->getMaxTextLength());
     }
 
@@ -206,7 +214,6 @@ class CommentsManagerFunctionalTest extends ComponentFunctionalTestCase
         $component = $this->getComponent();
         $component->mount($entity, ComponentTestComment::class);
 
-        // Override with a class that has no MAX_TEXT_LENGTH constant
         $component->commentClass = ComponentTestTag::class;
 
         $this->assertSame(4096, $component->getMaxTextLength());
@@ -218,9 +225,24 @@ class CommentsManagerFunctionalTest extends ComponentFunctionalTestCase
     {
         $component = $this->getComponent();
 
-        $this->assertFalse($component->readOnly);
+        $this->assertFalse($component->options->readOnly);
+        $this->assertSame('comments', $component->options->property);
         $this->assertIsArray($component->errors);
         $this->assertEmpty($component->errors);
         $this->assertNull($component->confirmId);
+    }
+
+    // ── hydration round-trip ──────────────────────────────────────────────────
+
+    public function testHydrateOptionsRoundTrip(): void
+    {
+        $component = $this->getComponent();
+
+        $original   = new CommentsManagerOptions(readOnly: true, property: 'remarks');
+        $dehydrated = $component->dehydrateOptions($original);
+        $hydrated   = $component->hydrateOptions($dehydrated);
+
+        $this->assertSame($original->readOnly, $hydrated->readOnly);
+        $this->assertSame($original->property, $hydrated->property);
     }
 }

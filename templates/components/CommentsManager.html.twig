@@ -50,11 +50,11 @@
       </div>
     {% endfor %}
   </div>
-  {% if not readOnly %}
+  {% if not options.readOnly %}
     {{ form_start(form) }}
       <div class="input-group">
         <div class="form-floating">
-          {{ form_widget(form.text, { attr: { style: 'height: initial;' } }) }} {# override float label height #}
+          {{ form_widget(form.text, { attr: { style: 'height: initial;' } }) }}
           {{ form_label(form.text) }}
         </div>
         <button

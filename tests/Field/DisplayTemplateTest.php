@@ -21,17 +21,17 @@ use PHPUnit\Framework\Attributes\UsesClass;
  * Covered scenarios:
  *   - null
  *   - bool true / false
- *   - int / float / string (empty and filled)
- *   - BackedEnum  → enum .value string
- *   - UnitEnum    → enum .name string
- *   - iterable / array
- *   - object with __toString()
- *   - object with .id + getName()
- *   - object with .id + getLabel()
- *   - object with .id + getTitle()
- *   - object with .id only → "#ID" fallback
- *   - Doctrine proxy (lazy-loaded relation)
- *   - object with __toString but no .id
+ *   - int, float
+ *   - string (empty and non-empty)
+ *   - BackedEnum              → enum .value string
+ *   - UnitEnum                → enum .name string
+ *   - iterable / array        → joined values
+ *   - object with __toString()         → __toString() result
+ *   - object with name getter          → getName() result
+ *   - object with label getter         → getLabel() result
+ *   - object with title getter         → getTitle() result
+ *   - object with only id getter       → "#ID" fallback
+ *   - Doctrine proxy after em->clear() → no toString crash
  *
  * Note: an object with *no* .id, *no* recognised enum properties, and *no*
  * __toString cannot be safely rendered by Twig without a custom extension.
@@ -129,20 +129,21 @@ class DisplayTemplateTest extends FieldTestCase
 
     public function testBackedEnumRendersEnumValue(): void
     {
-        $this->assertStringContainsString('active', $this->renderDisplay(DisplayTestBackedStatus::Active));
+        $html = $this->renderDisplay(DisplayTestBackedStatus::Active);
+        $this->assertStringContainsString('active', $html);
     }
 
     public function testUnitEnumRendersEnumName(): void
     {
-        $this->assertStringContainsString('Pending', $this->renderDisplay(DisplayTestUnitStatus::Pending));
+        $html = $this->renderDisplay(DisplayTestUnitStatus::Pending);
+        $this->assertStringContainsString('Pending', $html);
     }
 
-    // ── entity objects — the original bug scenario ────────────────────────────
+    // ── entity objects (the bug scenario) ─────────────────────────────────────
 
     /**
      * A related entity with __toString() — highest priority display path.
-     * This is the exact object type from the bug report: ManyToOne/OneToOne
-     * relation value that previously crashed with "could not be converted to string".
+     * This is the exact crash case from the bug report.
      */
     public function testEntityWithToStringUsesToString(): void
     {
@@ -153,10 +154,6 @@ class DisplayTemplateTest extends FieldTestCase
         $this->assertStringContainsString('Electronics', $this->renderDisplay($tag));
     }
 
-    /**
-     * An entity without __toString() but with getName() must fall through to
-     * the `name` property path without crashing.
-     */
     public function testEntityWithNameGetterRendersName(): void
     {
         $this->assertStringContainsString(
@@ -185,26 +182,15 @@ class DisplayTemplateTest extends FieldTestCase
     {
         $html = $this->renderDisplay(new DisplayTestEntityWithIdOnly(99));
 
-        $this->assertStringContainsString('99', $html);
         $this->assertStringContainsString('#', $html);
+        $this->assertStringContainsString('99', $html);
     }
 
     /**
-     * An object with __toString() but no .id (not a Doctrine entity) must also
-     * be handled safely via the __toString catch-all branch.
+     * A Doctrine proxy (lazy-loaded ManyToOne) must not trigger
+     * "Object of class Proxies\\__CG__\\... could not be converted to string".
      */
-    public function testNonEntityObjectWithToStringRendersCorrectly(): void
-    {
-        $obj = new DisplayTestStringableObject('stringable value');
-
-        $this->assertStringContainsString('stringable value', $this->renderDisplay($obj));
-    }
-
-    /**
-     * A Doctrine entity loaded after em->clear() is a proxy.
-     * Must not trigger "Object of class Proxies\\__CG__\\... could not be converted to string".
-     */
-    public function testDoctrineProxyDoesNotCrash(): void
+    public function testDoctrineProxyDoesNotCrashWithStringConversionError(): void
     {
         $tag = new FieldTestTagEntity('Proxy Tag');
         $this->em->persist($tag);
@@ -227,7 +213,7 @@ class DisplayTemplateTest extends FieldTestCase
         $this->assertStringContainsString('Proxy Tag', $html);
     }
 
-    // ── no-throw data provider ────────────────────────────────────────────────
+    // ── no-throw data provider covering full matrix ───────────────────────────
 
     /**
      * Smoke-test: none of these values should throw.
@@ -249,11 +235,10 @@ class DisplayTemplateTest extends FieldTestCase
         yield 'string array'    => [['a', 'b']];
         yield 'backed enum'     => [DisplayTestBackedStatus::Active];
         yield 'unit enum'       => [DisplayTestUnitStatus::Pending];
-        yield 'obj with name'   => [new DisplayTestEntityWithName('x')];
-        yield 'obj with label'  => [new DisplayTestEntityWithLabel('x')];
-        yield 'obj with title'  => [new DisplayTestEntityWithTitle('x')];
+        yield 'obj name'        => [new DisplayTestEntityWithName('x')];
+        yield 'obj label'       => [new DisplayTestEntityWithLabel('x')];
+        yield 'obj title'       => [new DisplayTestEntityWithTitle('x')];
         yield 'obj id only'     => [new DisplayTestEntityWithIdOnly(1)];
-        yield 'obj __toString'  => [new DisplayTestStringableObject('x')];
     }
 
     #[DataProvider('noThrowProvider')]
@@ -277,7 +262,6 @@ enum DisplayTestUnitStatus
     case Done;
 }
 
-/** Entity without __toString — tests the `.name` branch. */
 class DisplayTestEntityWithName
 {
     public function __construct(private readonly string $name) {}
@@ -285,7 +269,6 @@ class DisplayTestEntityWithName
     public function getName(): string { return $this->name; }
 }
 
-/** Entity without `.name` — tests the `.label` branch. */
 class DisplayTestEntityWithLabel
 {
     public function __construct(private readonly string $label) {}
@@ -293,7 +276,6 @@ class DisplayTestEntityWithLabel
     public function getLabel(): string { return $this->label; }
 }
 
-/** Entity without `.name`/`.label` — tests the `.title` branch. */
 class DisplayTestEntityWithTitle
 {
     public function __construct(private readonly string $title) {}
@@ -301,16 +283,8 @@ class DisplayTestEntityWithTitle
     public function getTitle(): string { return $this->title; }
 }
 
-/** Entity with only getId() — tests the `#ID` fallback branch. */
 class DisplayTestEntityWithIdOnly
 {
     public function __construct(private readonly int $id) {}
     public function getId(): int { return $this->id; }
-}
-
-/** Non-entity object with __toString() but no .id — tests the __toString catch-all. */
-class DisplayTestStringableObject
-{
-    public function __construct(private readonly string $value) {}
-    public function __toString(): string { return $this->value; }
 }

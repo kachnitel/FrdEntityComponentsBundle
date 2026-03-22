@@ -35,11 +35,8 @@ final class CommentsManager extends AbstractController
     #[LiveProp]
     public string $commentClass;
 
-    #[LiveProp]
-    public string $property = 'comments';
-
-    #[LiveProp]
-    public bool $readOnly = false;
+    #[LiveProp(hydrateWith: 'hydrateOptions', dehydrateWith: 'dehydrateOptions')]
+    public CommentsManagerOptions $options;
 
     #[LiveProp(writable: true)]
     public ?int $confirmId = null;
@@ -52,10 +49,15 @@ final class CommentsManager extends AbstractController
     public function __construct(
         private EntityManagerInterface $entityManager,
         private Security $security
-    ) {}
+    ) {
+        $this->options = new CommentsManagerOptions();
+    }
 
-    public function mount(CommentableInterface $entity, string $commentClass): void
-    {
+    public function mount(
+        CommentableInterface $entity,
+        string $commentClass,
+        CommentsManagerOptions $options = new CommentsManagerOptions(),
+    ): void {
         if (!method_exists($entity, 'getId')) {
             throw new \InvalidArgumentException('Entity must have a getId() method.');
         }
@@ -70,11 +72,38 @@ final class CommentsManager extends AbstractController
             $reflection = $reflection->getParentClass();
         }
 
-        $this->entityClass = $reflection->getName();
-        $this->entityId = $entity->getId();
+        $this->entityClass  = $reflection->getName();
+        $this->entityId     = $entity->getId();
         $this->commentClass = $commentClass;
-        $this->entity = $entity;
+        $this->options      = $options;
+        $this->entity       = $entity;
     }
+
+    // ── LiveProp hydration ────────────────────────────────────────────────────
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function hydrateOptions(array $data): CommentsManagerOptions
+    {
+        return new CommentsManagerOptions(
+            readOnly: (bool) ($data['readOnly'] ?? false),
+            property: (string) ($data['property'] ?? 'comments'),
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function dehydrateOptions(CommentsManagerOptions $options): array
+    {
+        return [
+            'readOnly' => $options->readOnly,
+            'property' => $options->property,
+        ];
+    }
+
+    // ── Entity access ─────────────────────────────────────────────────────────
 
     public function getEntity(): CommentableInterface
     {
@@ -99,7 +128,7 @@ final class CommentsManager extends AbstractController
     public function getComments(): array
     {
         $entity = $this->getEntity();
-        $method = 'get' . ucfirst($this->property);
+        $method = 'get' . ucfirst($this->options->property);
 
         if (!method_exists($entity, $method)) {
             throw new Exception(sprintf(
@@ -114,7 +143,7 @@ final class CommentsManager extends AbstractController
         if (!$comments instanceof \Doctrine\Common\Collections\Collection) {
             throw new Exception(sprintf(
                 'Property "%s" is not a Collection on entity "%s"',
-                $this->property,
+                $this->options->property,
                 get_class($entity)
             ));
         }
@@ -125,10 +154,10 @@ final class CommentsManager extends AbstractController
     #[ExposeInTemplate]
     public function getMaxTextLength(): int
     {
-        // Default max length, can be overridden by the comment class if it has a constant
         if (defined("{$this->commentClass}::MAX_TEXT_LENGTH")) {
             return constant("{$this->commentClass}::MAX_TEXT_LENGTH");
         }
+
         return 4096;
     }
 
@@ -137,21 +166,24 @@ final class CommentsManager extends AbstractController
         return $this->createFormBuilder()
             ->add('text', TextareaType::class, [
                 'label' => 'Add a comment',
-                'attr' => [
-                    'rows' => 3,
-                    'maxlength' => $this->getMaxTextLength(),
-                    'placeholder' => 'Add a comment'
-                ]
+                'attr'  => [
+                    'rows'        => 3,
+                    'maxlength'   => $this->getMaxTextLength(),
+                    'placeholder' => 'Add a comment',
+                ],
             ])
-            ->setDisabled($this->readOnly)
+            ->setDisabled($this->options->readOnly)
             ->getForm();
     }
+
+    // ── LiveActions ───────────────────────────────────────────────────────────
 
     #[LiveAction]
     public function submit(Request $request): void
     {
-        if ($this->readOnly) {
+        if ($this->options->readOnly) {
             $this->errors = ['Cannot add comments in read-only mode'];
+
             return;
         }
 
@@ -175,7 +207,7 @@ final class CommentsManager extends AbstractController
     #[LiveAction]
     public function deleteComment(#[LiveArg] int $id, #[LiveArg] string $csrfToken): void
     {
-        if ($this->readOnly) {
+        if ($this->options->readOnly) {
             throw new Exception('Cannot delete comment in read-only mode');
         }
 
@@ -185,6 +217,7 @@ final class CommentsManager extends AbstractController
 
         if ($this->confirmId !== $id) {
             $this->confirmId = $id;
+
             return;
         }
         $this->confirmId = null;
@@ -201,7 +234,6 @@ final class CommentsManager extends AbstractController
 
             $user = $this->security->getUser();
 
-            // Check if user created this comment
             if (method_exists($comment, 'getCreatedBy')) {
                 if ($comment->getCreatedBy() !== $user && !$this->isGranted('ROLE_ADMIN')) {
                     throw new Exception('Cannot delete comment created by another user');

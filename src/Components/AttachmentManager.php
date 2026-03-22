@@ -49,14 +49,8 @@ final class AttachmentManager extends AbstractController
     #[LiveProp]
     public string $attachmentClass;
 
-    #[LiveProp]
-    public bool $readOnly = false;
-
-    #[LiveProp]
-    public string $property = 'attachments';
-
-    #[LiveProp]
-    public ?string $tagClass = null;
+    #[LiveProp(hydrateWith: 'hydrateOptions', dehydrateWith: 'dehydrateOptions')]
+    public AttachmentManagerOptions $options;
 
     public array $errors = [];
 
@@ -67,10 +61,15 @@ final class AttachmentManager extends AbstractController
         private EntityManagerInterface $entityManager,
         private LoggerInterface $logger,
         private readonly FileHandlerInterface $fileHandler
-    ) {}
+    ) {
+        $this->options = new AttachmentManagerOptions();
+    }
 
-    public function mount(AttachableInterface $entity, string $attachmentClass): void
-    {
+    public function mount(
+        AttachableInterface $entity,
+        string $attachmentClass,
+        AttachmentManagerOptions $options = new AttachmentManagerOptions(),
+    ): void {
         if (!method_exists($entity, 'getId')) {
             throw new \InvalidArgumentException('Entity must have a getId() method.');
         }
@@ -85,11 +84,40 @@ final class AttachmentManager extends AbstractController
             $reflection = $reflection->getParentClass();
         }
 
-        $this->entityClass = $reflection->getName();
-        $this->entityId = $entity->getId();
+        $this->entityClass     = $reflection->getName();
+        $this->entityId        = $entity->getId();
         $this->attachmentClass = $attachmentClass;
-        $this->entity = $entity;
+        $this->options         = $options;
+        $this->entity          = $entity;
     }
+
+    // ── LiveProp hydration ────────────────────────────────────────────────────
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function hydrateOptions(array $data): AttachmentManagerOptions
+    {
+        return new AttachmentManagerOptions(
+            readOnly: (bool) ($data['readOnly'] ?? false),
+            property: (string) ($data['property'] ?? 'attachments'),
+            tagClass: isset($data['tagClass']) ? (string) $data['tagClass'] : null,
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function dehydrateOptions(AttachmentManagerOptions $options): array
+    {
+        return [
+            'readOnly' => $options->readOnly,
+            'property' => $options->property,
+            'tagClass' => $options->tagClass,
+        ];
+    }
+
+    // ── Entity access ─────────────────────────────────────────────────────────
 
     public function getEntity(): AttachableInterface
     {
@@ -114,7 +142,7 @@ final class AttachmentManager extends AbstractController
     public function getAttachments(): array
     {
         $entity = $this->getEntity();
-        $method = 'get' . ucfirst($this->property);
+        $method = 'get' . ucfirst($this->options->property);
 
         if (!method_exists($entity, $method)) {
             throw new Exception(sprintf(
@@ -129,7 +157,7 @@ final class AttachmentManager extends AbstractController
         if (!$attachments instanceof \Doctrine\Common\Collections\Collection) {
             throw new Exception(sprintf(
                 'Property "%s" is not a Collection on entity "%s"',
-                $this->property,
+                $this->options->property,
                 get_class($entity)
             ));
         }
@@ -142,26 +170,26 @@ final class AttachmentManager extends AbstractController
         $entity = $this->entityManager->getRepository($this->entityClass)->find($this->entityId);
 
         return $this->createFormBuilder($entity)
-            ->add($this->property, CollectionType::class, [
-                'label' => 'Upload Files',
-                'entry_type' => FileType::class,
-                'entry_options' => [
-                    'label' => false
-                ],
-                'allow_add' => true,
-                'allow_delete' => true,
+            ->add($this->options->property, CollectionType::class, [
+                'label'          => 'Upload Files',
+                'entry_type'     => FileType::class,
+                'entry_options'  => ['label' => false],
+                'allow_add'      => true,
+                'allow_delete'   => true,
                 'prototype_name' => '__uploaded_files__',
-                'required' => false,
-                'mapped' => false
+                'required'       => false,
+                'mapped'         => false,
             ])
-            ->setDisabled($this->readOnly)
+            ->setDisabled($this->options->readOnly)
             ->getForm();
     }
+
+    // ── LiveActions ───────────────────────────────────────────────────────────
 
     #[LiveAction]
     public function addFile(): void
     {
-        $this->formValues[$this->property][] = null;
+        $this->formValues[$this->options->property][] = null;
     }
 
     #[LiveAction]
@@ -169,18 +197,19 @@ final class AttachmentManager extends AbstractController
     {
         if (!$request->files->get('form')) {
             $this->errors = ['No files uploaded'];
+
             return;
         }
 
         try {
-            $files = $request->files->get('form')[$this->property] ?? [];
+            $files = $request->files->get('form')[$this->options->property] ?? [];
             $this->handleFiles($files);
 
             $this->entityManager->flush();
 
             $this->dispatchBrowserEvent('toast.show', [
                 'message' => 'Files uploaded successfully',
-                'type' => 'success'
+                'type'    => 'success',
             ]);
 
             $this->errors = [];
@@ -188,12 +217,12 @@ final class AttachmentManager extends AbstractController
             $this->errors = [$e->getMessage()];
             $this->logger->error($e->getMessage(), [
                 'exception' => $e,
-                'caller' => __METHOD__,
+                'caller'    => __METHOD__,
             ]);
 
             $this->dispatchBrowserEvent('toast.show', [
                 'message' => 'Error uploading files: ' . $e->getMessage(),
-                'type' => 'error'
+                'type'    => 'error',
             ]);
         }
 
@@ -202,8 +231,8 @@ final class AttachmentManager extends AbstractController
 
     protected function handleFiles(array $files): void
     {
-        $entity = $this->getEntity();
-        $adderMethod = $this->getMethod('add');
+        $entity       = $this->getEntity();
+        $adderMethod  = $this->getMethod('add');
 
         foreach ($files as $file) {
             if ($file === null) {
@@ -232,7 +261,7 @@ final class AttachmentManager extends AbstractController
                 throw new Exception('Attachment not found');
             }
 
-            $entity = $this->getEntity();
+            $entity        = $this->getEntity();
             $removerMethod = $this->getMethod('remove');
             $entity->$removerMethod($attachment);
 
@@ -242,27 +271,26 @@ final class AttachmentManager extends AbstractController
 
             $this->dispatchBrowserEvent('toast.show', [
                 'message' => 'File deleted successfully',
-                'type' => 'success'
+                'type'    => 'success',
             ]);
         } catch (Exception $e) {
             $this->logger->error($e->getMessage(), [
                 'exception' => $e,
-                'caller' => __METHOD__,
+                'caller'    => __METHOD__,
             ]);
 
             $this->dispatchBrowserEvent('toast.show', [
                 'message' => 'Error deleting file: ' . $e->getMessage(),
-                'type' => 'error'
+                'type'    => 'error',
             ]);
         }
     }
 
     private function getMethod(string $prefix): string
     {
-        $entity = $this->getEntity();
-        // Try standard naming: addAttachment, removeAttachment
-        $singularProperty = rtrim($this->property, 's');
-        $method = $prefix . ucfirst($singularProperty);
+        $entity           = $this->getEntity();
+        $singularProperty = rtrim($this->options->property, 's');
+        $method           = $prefix . ucfirst($singularProperty);
 
         if (method_exists($entity, $method)) {
             return $method;

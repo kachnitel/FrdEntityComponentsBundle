@@ -11,9 +11,8 @@
  #   4. UnitEnum    — has .name, no .value, no .id
  #   5. Doctrine entity / any object with .id
  #         → __toString() → .name → .label → .title → "#ID" fallback
- #   6. Any other stringable object (has __toString, no .id)
- #   7. bool → "Yes" / "No"
- #   8. scalar (int / float / string)
+ #   6. bool → "Yes" / "No"
+ #   7. scalar (int / float / string)
  #}
 {% if value is null %}
     <span class="text-muted">—</span>
@@ -38,12 +37,8 @@
     {% else %}
         #{{ value.id }}
     {% endif %}
-{% elseif value.__toString is defined %}
-    {# Any other object that knows how to stringify itself #}
-    {{ value }}
 {% elseif value is same as(true) or value is same as(false) %}
     {{ value ? 'Yes' : 'No' }}
 {% else %}
-    {# scalar: int / float / string — safe to echo directly #}
     {{ value }}
 {% endif %}

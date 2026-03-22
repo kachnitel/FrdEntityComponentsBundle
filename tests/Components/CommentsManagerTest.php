@@ -1,14 +1,8 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Kachnitel\EntityComponentsBundle\Tests\Components;
 
-use Doctrine\Common\Collections\ArrayCollection;
-use Kachnitel\EntityComponentsBundle\Interface\CommentableInterface;
-use Kachnitel\EntityComponentsBundle\Interface\CommentInterface;
-use PHPUnit\Framework\MockObject\MockObject;
-use Symfony\Component\Security\Core\User\UserInterface;
+use Kachnitel\EntityComponentsBundle\Components\CommentsManagerOptions;
 
 class CommentsManagerTest extends ComponentTestCase
 {
@@ -18,11 +12,12 @@ class CommentsManagerTest extends ComponentTestCase
         $this->assertNotNull($component);
     }
 
-    public function testCommentsManagerHasDefaultProperties(): void
+    public function testCommentsManagerHasDefaultOptions(): void
     {
         $component = $this->factory->get('K:Entity:CommentsManager');
 
-        $this->assertFalse($component->readOnly);
+        $this->assertFalse($component->options->readOnly);
+        $this->assertSame('comments', $component->options->property);
         $this->assertIsArray($component->errors);
         $this->assertEmpty($component->errors);
     }
@@ -33,10 +28,10 @@ class CommentsManagerTest extends ComponentTestCase
         $this->assertNull($component->confirmId);
     }
 
-    public function testReadOnlyPropertyCanBeSet(): void
+    public function testReadOnlyOptionCanBeSet(): void
     {
         $component = $this->factory->get('K:Entity:CommentsManager');
-        $component->readOnly = true;
-        $this->assertTrue($component->readOnly);
+        $component->options = new CommentsManagerOptions(readOnly: true);
+        $this->assertTrue($component->options->readOnly);
     }
 }

@@ -37,16 +37,16 @@
             {% endblock %}
 
             {% block tag_manager %}
-              {% if this.tagClass %}
+              {% if options.tagClass %}
                 {{ component('K:Entity:TagManager', {
                   entity: attachment,
-                  tagClass: this.tagClass,
-                  readOnly: this.readOnly
+                  tagClass: options.tagClass,
+                  readOnly: options.readOnly
                 }) }}
               {% endif %}
             {% endblock %}
 
-            {% if not this.readOnly %}
+            {% if not options.readOnly %}
               {% block attachment_actions %}
                 <button
                   type="button"
@@ -78,7 +78,7 @@
     </div>
   {% endblock %}
 
-  {% if not this.readOnly %}
+  {% if not options.readOnly %}
     {% block upload_form %}
       <div class="mt-3">
         {{ form_start(form) }}
