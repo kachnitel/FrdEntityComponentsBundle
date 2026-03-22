@@ -1,3 +1,20 @@
+{#
+ # Default read-only display for inline-edit field components.
+ #
+ # Override in your app:
+ #   templates/bundles/KachnitelEntityComponents/components/field/_display.html.twig
+ #
+ # Type dispatch order:
+ #   1. null
+ #   2. iterable (array, Collection)
+ #   3. BackedEnum  — has .value, no .id
+ #   4. UnitEnum    — has .name, no .value, no .id
+ #   5. Doctrine entity / any object with .id
+ #         → __toString() → .name → .label → .title → "#ID" fallback
+ #   6. Any other stringable object (has __toString, no .id)
+ #   7. bool → "Yes" / "No"
+ #   8. scalar (int / float / string)
+ #}
 {% if value is null %}
     <span class="text-muted">—</span>
 {% elseif value is iterable %}
@@ -8,8 +25,25 @@
 {% elseif value.name is defined and value.value is not defined and value.id is not defined %}
     {# UnitEnum #}
     {{ value.name }}
-{% elseif value is not same as(false) and value is not same as(true) %}
+{% elseif value.id is defined %}
+    {# Doctrine entity or any identified object — never do bare {{ value }} here #}
+    {% if value.__toString is defined %}
+        {{ value }}
+    {% elseif value.name is defined %}
+        {{ value.name }}
+    {% elseif value.label is defined %}
+        {{ value.label }}
+    {% elseif value.title is defined %}
+        {{ value.title }}
+    {% else %}
+        #{{ value.id }}
+    {% endif %}
+{% elseif value.__toString is defined %}
+    {# Any other object that knows how to stringify itself #}
     {{ value }}
-{% else %}
+{% elseif value is same as(true) or value is same as(false) %}
     {{ value ? 'Yes' : 'No' }}
+{% else %}
+    {# scalar: int / float / string — safe to echo directly #}
+    {{ value }}
 {% endif %}
