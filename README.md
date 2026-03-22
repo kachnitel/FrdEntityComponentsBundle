@@ -9,7 +9,161 @@
 ![Symfony](<https://img.shields.io/badge/Symfony-^6.4|^7.0|^8.0-000000?logo=symfony&logoColor=white>)
 <!-- BADGES -->
 
-Reusable Symfony Live Components for entity management. Provides tag management, attachment management, comments, relationship selectors, and a full set of **inline-edit field components** that work with any Doctrine entity.
+Reusable Symfony Live Components for entity management: tags, file attachments, comments, relationship dropdowns, and a full set of **inline-edit field components** that work with any Doctrine entity.
+
+## Quick Start
+
+### 1. Install
+
+```bash
+composer require kachnitel/entity-components-bundle
+```
+
+### 2. Use any component
+
+```twig
+{{# Inline-edit a text field — any entity property with a setter #}}
+<twig:K:Entity:Field:String :entity="user" property="name" />
+
+{{# Tag management #}}
+<twig:K:Entity:TagManager :entity="product" tagClass="App\\Entity\\Tag" />
+
+{{# File attachments #}}
+<twig:K:Entity:AttachmentManager :entity="product" attachmentClass="App\\Entity\\Attachment" />
+
+{{# Comments #}}
+<twig:K:Entity:CommentsManager :entity="article" commentClass="App\\Entity\\Comment" />
+
+{{# Relationship / enum dropdown #}}
+<twig:K:Entity:SelectRelationship :entity="order" property="status" />
+```
+
+---
+
+## What's Next?
+
+<details>
+<summary><strong>Inline-edit any field</strong></summary>
+
+**Level 1:** Drop in a field component — click ✎ to edit, save, or cancel:
+```twig
+<twig:K:Entity:Field:String  :entity="user"    property="name" />
+<twig:K:Entity:Field:Int     :entity="product" property="stock" />
+<twig:K:Entity:Field:Bool    :entity="user"    property="active" />
+<twig:K:Entity:Field:Date    :entity="event"   property="startsAt" />
+<twig:K:Entity:Field:Enum    :entity="order"   property="status" />
+```
+
+**Level 2:** Association fields with live search:
+```twig
+<twig:K:Entity:Field:Relationship :entity="product"  property="category" />
+<twig:K:Entity:Field:Collection   :entity="post"     property="tags" />
+```
+
+**Level 3:** Add Symfony Validator constraints to the entity — validation runs automatically before flushing:
+```php
+#[Assert\NotBlank]
+#[Assert\Length(max: 100)]
+private ?string $name = null;
+```
+
+**Level 4:** Control who can edit by overriding `EditabilityResolverInterface`:
+```yaml
+Kachnitel\EntityComponentsBundle\Components\Field\EditabilityResolverInterface:
+    alias: App\Field\MyEditabilityResolver
+```
+
+**Details:** [Inline-Edit Guide](docs/INLINE_EDIT.md)
+
+</details>
+
+<details>
+<summary><strong>Tag management</strong></summary>
+
+**Level 1:** Implement `TagInterface` and `TaggableInterface`, drop in the component:
+```twig
+<twig:K:Entity:TagManager :entity="product" tagClass="App\\Entity\\Tag" />
+```
+
+**Level 2:** Read-only badge display:
+```twig
+<twig:K:Entity:TagManager :entity="product" tagClass="App\\Entity\\Tag" :readOnly="true" />
+```
+
+**Level 3:** Colored categories — return a hex color from `getCategoryColor()` on your Tag entity. Text color is flipped automatically for contrast.
+
+**Details:** [Tags Guide](docs/TAGS.md)
+
+</details>
+
+<details>
+<summary><strong>File attachments</strong></summary>
+
+**Level 1:** Register a `FileHandlerInterface` service, implement `AttachableInterface`, drop in the component:
+```twig
+<twig:K:Entity:AttachmentManager :entity="product" attachmentClass="App\\Entity\\Attachment" />
+```
+
+**Level 2:** Read-only display, custom collection property:
+```twig
+:options="new AttachmentManagerOptions(readOnly: true, property: 'media')"
+```
+
+**Level 3:** Per-attachment tagging:
+```twig
+:options="new AttachmentManagerOptions(tagClass: 'App\\Entity\\Tag')"
+```
+
+**Details:** [Attachments Guide](docs/ATTACHMENTS.md)
+
+</details>
+
+<details>
+<summary><strong>Comments</strong></summary>
+
+**Level 1:** Implement `CommentInterface` and `CommentableInterface`, drop in the component:
+```twig
+<twig:K:Entity:CommentsManager :entity="article" commentClass="App\\Entity\\Comment" />
+```
+
+**Level 2:** Read-only display, custom collection property:
+```twig
+:options="new CommentsManagerOptions(readOnly: true, property: 'notes')"
+```
+
+**Level 3:** Limit text length — add a `MAX_TEXT_LENGTH` constant to your Comment entity and the textarea `maxlength` is set automatically.
+
+**Details:** [Comments Guide](docs/COMMENTS.md)
+
+</details>
+
+<details>
+<summary><strong>Relationship / enum dropdown</strong></summary>
+
+**Level 1:** Works out of the box for any entity relation or backed enum:
+```twig
+<twig:K:Entity:SelectRelationship :entity="order" property="region" />
+```
+
+**Level 2:** Access control, placeholder, label:
+```twig
+:options="new SelectRelationshipOptions(
+    role: 'ROLE_EDITOR',
+    placeholder: '— Select Region —',
+)"
+```
+
+**Level 3:** Filter records or use a custom repository method:
+```twig
+:options="new SelectRelationshipOptions(filter: { active: true })"
+:options="new SelectRelationshipOptions(repositoryMethod: 'findActive')"
+```
+
+**Details:** [SelectRelationship Guide](docs/SELECT_RELATIONSHIP.md)
+
+</details>
+
+---
 
 ## Components at a glance
 
@@ -28,264 +182,15 @@ Reusable Symfony Live Components for entity management. Provides tag management,
 | `RelationshipField` | `K:Entity:Field:Relationship` | Live-search inline editor for ManyToOne / OneToOne |
 | `CollectionField` | `K:Entity:Field:Collection` | Live-search inline editor for ManyToMany / OneToMany |
 
-## Installation
+## Documentation
 
-```bash
-composer require kachnitel/entity-components-bundle
-```
-
----
-
-## Inline-Edit Field Components
-
-All field components share the same lifecycle:
-
-- **Display mode** — renders the current value with an ✎ edit trigger (when permitted)
-- **Edit mode** — renders an input / select, with Save and Cancel buttons
-- **Save** — validates via Symfony Validator before flushing; shows inline error on failure
-- **Cancel** — discards unsaved input and refreshes from the database
-
-### Basic usage
-
-```twig
-{# Any property with a setter becomes inline-editable #}
-<twig:K:Entity:Field:String  :entity="user"    property="name" />
-<twig:K:Entity:Field:Int     :entity="product" property="stock" />
-<twig:K:Entity:Field:Float   :entity="product" property="price" />
-<twig:K:Entity:Field:Bool    :entity="user"    property="active" />
-<twig:K:Entity:Field:Date    :entity="event"   property="startsAt" />
-<twig:K:Entity:Field:Enum    :entity="order"   property="status" />
-
-{# Association fields — live search for large datasets #}
-<twig:K:Entity:Field:Relationship :entity="product"  property="category" />
-<twig:K:Entity:Field:Collection   :entity="post"     property="tags" />
-```
-
-### Controlling editability
-
-By default all properties with a setter are editable. Override `EditabilityResolverInterface`
-to enforce your own policy — role checks, entity state, attribute flags, etc.:
-
-```yaml
-# config/services.yaml
-Kachnitel\EntityComponentsBundle\Field\EditabilityResolverInterface:
-    alias: App\Field\MyEditabilityResolver
-```
-
-```php
-// src/Field/MyEditabilityResolver.php
-use Kachnitel\EntityComponentsBundle\Components\Field\EditabilityResolverInterface;
-
-class MyEditabilityResolver implements EditabilityResolverInterface
-{
-    public function __construct(
-        private readonly Security $security,
-        private readonly PropertyAccessorInterface $propertyAccessor,
-    ) {}
-
-    public function canEdit(object $entity, string $property): bool
-    {
-        if (!$this->security->isGranted('ROLE_EDITOR')) {
-            return false;
-        }
-        return $this->propertyAccessor->isWritable($entity, $property);
-    }
-}
-```
-
-`kachnitel/admin-bundle` registers its own `AdminEditabilityResolver` which reads
-`#[AdminColumn(editable: ...)]` and `#[Admin(enableInlineEdit: true)]` attributes
-and checks the `ADMIN_EDIT` voter automatically.
-
-### Customising the value display
-
-The read-only cell uses `_display.html.twig`, which renders `{{ value }}` by default.
-Override it in your app for richer display:
-
-```twig
-{# templates/bundles/KachnitelEntityComponents/components/field/_display.html.twig #}
-{% if value is null %}
-    <em class="text-muted">not set</em>
-{% elseif value is instanceof('\DateTimeInterface') %}
-    {{ value|date('d/m/Y H:i') }}
-{% else %}
-    {{ value }}
-{% endif %}
-```
-
-### EnumField — custom labels
-
-If your enum implements `label()` or `getLabel()`, it will be used in the dropdown:
-
-```php
-enum OrderStatus: string
-{
-    case Pending  = 'pending';
-    case Shipped  = 'shipped';
-
-    public function label(): string
-    {
-        return match ($this) {
-            self::Pending => 'Awaiting shipment',
-            self::Shipped => 'On its way',
-        };
-    }
-}
-```
-
-Otherwise the case name is humanized: `PENDING_APPROVAL` → `Pending Approval`.
-
-### RelationshipField & CollectionField — label resolution
-
-The live search labels are resolved in this order:
-
-1. `__toString()` on the target entity
-2. First of `name`, `label`, `title` that exists
-3. `ClassName #ID` fallback
-
-Add `__toString()` to your related entity for the cleanest labels.
-
-### Choosing between relationship/collection components
-
-| Need | Component |
+| Guide | Description |
 |---|---|
-| Single-value relation, large dataset, save/cancel | `K:Entity:Field:Relationship` |
-| Multi-value collection, large dataset, save/cancel | `K:Entity:Field:Collection` |
-| Single-value relation or enum, small/static set, persist-on-change | `K:Entity:SelectRelationship` |
-| Tagging with colored category badges | `K:Entity:TagManager` |
-
----
-
-## TagManager
-
-Live Component for managing tags on entities.
-
-**Props:**
-- `entity` (TaggableInterface) — the entity to manage tags for
-- `tagClass` (string) — FQCN of your Tag entity
-- `readOnly` (bool) — disable editing (default: `false`)
-
-```twig
-<twig:K:Entity:TagManager
-    :entity="product"
-    tagClass="App\\Entity\\Tag"
-/>
-```
-
----
-
-## AttachmentManager
-
-Live Component for managing file attachments on entities.
-
-**Props:**
-- `entity` (AttachableInterface) — the entity to manage attachments for
-- `attachmentClass` (string) — FQCN of your Attachment entity
-- `readOnly` (bool) — disable file uploads/deletion (default: `false`)
-- `property` (string) — property name for the collection (default: `'attachments'`)
-
-```twig
-<twig:K:Entity:AttachmentManager
-    :entity="product"
-    attachmentClass="App\\Entity\\UploadedFile"
-/>
-```
-
-Register a `FileHandlerInterface` service in your app:
-
-```php
-use Kachnitel\EntityComponentsBundle\Interface\FileHandlerInterface;
-
-class LocalStorageHandler implements FileHandlerInterface
-{
-    public function handle(UploadedFile $file): AttachmentInterface { /* ... */ }
-    public function deleteFile(AttachmentInterface $attachment): void { /* ... */ }
-}
-```
-
----
-
-## CommentsManager
-
-Live Component for threaded comments with delete confirmation.
-
-**Props:**
-- `entity` (CommentableInterface) — the entity to manage comments for
-- `commentClass` (string) — FQCN of your Comment entity
-- `readOnly` (bool) — disable new comments and deletion (default: `false`)
-
-```twig
-<twig:K:Entity:CommentsManager
-    :entity="article"
-    commentClass="App\\Entity\\Comment"
-/>
-```
-
----
-
-## SelectRelationship
-
-Live Component for inline editing of entity relationships and enums via an eager dropdown.
-Automatically detects whether the target property is an entity or enum.
-
-**Props:**
-- `entity` (object) — the entity containing the property to edit
-- `property` (string) — the property name
-- `placeholder` (string) — empty option text (default: `'-'`)
-- `displayProperty` (string) — property used as option label (default: `'name'`)
-- `valueProperty` (string) — property used as option value (default: `'id'`)
-- `filter` (array) — simple `findBy()` criteria, e.g. `{ active: true }`
-- `repositoryMethod` (string) — custom repository method name
-- `repositoryArgs` (array) — arguments for the custom repository method
-- `role` (string) — role required to show the editable select
-- `viewRole` (string) — role required to show the read-only display
-- `disableEmpty` (bool) — disable the empty option (default: `false`)
-- `disabled` (bool) — force read-only (default: `false`)
-
-```twig
-<twig:K:Entity:SelectRelationship
-    :entity="order"
-    property="region"
-    role="ROLE_ORDER_REGION_EDIT"
-    placeholder="— Select Region —"
-/>
-```
-
----
-
-## Installation details
-
-### 1. Create a Tag Entity
-
-```php
-use Kachnitel\EntityComponentsBundle\Interface\TagInterface;
-
-#[ORM\Entity]
-class Tag implements TagInterface
-{
-    // ... getId(), getValue(), getDisplayName(), getCategory(), getCategoryColor()
-}
-```
-
-### 2. Make your entity taggable
-
-```php
-use Kachnitel\EntityComponentsBundle\Interface\TaggableInterface;
-use Kachnitel\EntityComponentsBundle\Trait\TaggableTrait;
-
-#[ORM\Entity]
-class Product implements TaggableInterface
-{
-    use TaggableTrait;
-
-    #[ORM\ManyToMany(targetEntity: Tag::class)]
-    private Collection $tags;
-
-    public function __construct() { $this->initializeTags(); }
-}
-```
-
----
+| [Inline-Edit Fields](docs/INLINE_EDIT.md) | All field types, validation, editability control, display override |
+| [Tags](docs/TAGS.md) | TagManager setup, categories, colors |
+| [Attachments](docs/ATTACHMENTS.md) | AttachmentManager setup, FileHandlerInterface, template blocks |
+| [Comments](docs/COMMENTS.md) | CommentsManager setup, author attribution, text limits |
+| [SelectRelationship](docs/SELECT_RELATIONSHIP.md) | Dropdown for relations and enums, access control, filtering |
 
 ## Requirements
 
@@ -297,7 +202,3 @@ class Product implements TaggableInterface
 ## License
 
 MIT
-
-## Contributing
-
-Contributions welcome! This bundle aims to provide generic, reusable components for Symfony applications.
