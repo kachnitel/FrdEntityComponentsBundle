@@ -29,19 +29,19 @@ Show the editable select only to users with the right role. Everyone else sees a
 <twig:K:Entity:SelectRelationship
     :entity="order"
     property="region"
-    :options="new SelectRelationshipOptions(
+    :config="{
         role: 'ROLE_ORDER_REGION_EDIT',
-    )"
+    }"
 />
 ```
 
 Use `viewRole` to hide the field entirely from users who lack a secondary role:
 
 ```twig
-:options="new SelectRelationshipOptions(
+:config="{
     role: 'ROLE_EDITOR',
     viewRole: 'ROLE_VIEWER',
-)"
+}"
 ```
 
 </details>
@@ -52,9 +52,9 @@ Use `viewRole` to hide the field entirely from users who lack a secondary role:
 Pass a `filter` array for a simple `findBy()` call — useful for showing only active records:
 
 ```twig
-:options="new SelectRelationshipOptions(
+:config="{
     filter: { active: true },
-)"
+}"
 ```
 
 </details>
@@ -65,10 +65,10 @@ Pass a `filter` array for a simple `findBy()` call — useful for showing only a
 For more complex queries, point at a custom repository method:
 
 ```twig
-:options="new SelectRelationshipOptions(
+config="{{ {
     repositoryMethod: 'findByRoles',
     repositoryArgs: [['ROLE_TERRITORY_MANAGER']],
-)"
+} }}"
 ```
 
 ```php
@@ -87,10 +87,10 @@ By default the component reads `id` as the option value and `name` as the label.
 Override either with `valueProperty` / `displayProperty`:
 
 ```twig
-:options="new SelectRelationshipOptions(
+:config="{
     valueProperty: 'code',
     displayProperty: 'label',
-)"
+}"
 ```
 
 </details>
@@ -123,11 +123,11 @@ enum OrderStatus: string
 <summary><strong>Labels and placeholder</strong></summary>
 
 ```twig
-:options="new SelectRelationshipOptions(
+:config="{
     placeholder: '— Select Region —',
     label: 'Delivery Region',
     disableEmpty: false,   // set true to prevent selecting blank
-)"
+}"
 ```
 
 </details>
@@ -136,7 +136,7 @@ enum OrderStatus: string
 <summary><strong>Force read-only</strong></summary>
 
 ```twig
-:options="new SelectRelationshipOptions(disabled: true)"
+:config="{ disabled: true }"
 ```
 
 This is independent of `role` — useful when the read-only state comes from entity logic rather than user permissions.

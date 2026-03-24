@@ -13,10 +13,10 @@ namespace Kachnitel\EntityComponentsBundle\Components;
  * <twig:K:Entity:SelectRelationship
  *     :entity="order"
  *     property="region"
- *     :options="new SelectRelationshipOptions(
+ *     :config="{
  *         placeholder: '— Region —',
- *         role: 'ROLE_ORDER_REGION_EDIT',
- *     )"
+ *         role: 'ROLE_ORDER_REGION_EDIT'
+ *     }"
  * />
  * ```
  */

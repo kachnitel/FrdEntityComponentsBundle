@@ -20,16 +20,14 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  *
  * Automatically detects whether the property is an Entity or Enum and
  * loads appropriate options. All display and access configuration is
- * grouped into a {@see SelectRelationshipOptions} DTO passed via mount().
+ * passed as a plain array via mount() and internally converted to a
+ * {@see SelectRelationshipOptions} DTO.
  *
  * ```twig
  * <twig:K:Entity:SelectRelationship
  *     :entity="order"
  *     property="region"
- *     :options="new SelectRelationshipOptions(
- *         placeholder: '— Region —',
- *         role: 'ROLE_ORDER_REGION_EDIT',
- *     )"
+ *     :config="{ placeholder: '— Region —', role: 'ROLE_ORDER_REGION_EDIT' }"
  * />
  * ```
  */
@@ -52,7 +50,7 @@ final class SelectRelationship
     public string $property = '';
 
     #[LiveProp(hydrateWith: 'hydrateOptions', dehydrateWith: 'dehydrateOptions')]
-    public SelectRelationshipOptions $options;
+    public SelectRelationshipOptions $config;
 
     private ?string $targetClass = null;
     private bool $isEnum = false;
@@ -63,18 +61,30 @@ final class SelectRelationship
         private PropertyInfoExtractorInterface $propertyInfo,
         private PropertyAccessorInterface $propertyAccessor,
     ) {
-        $this->options = new SelectRelationshipOptions();
+        $this->config = new SelectRelationshipOptions();
     }
 
+    /**
+     * @param array<string, mixed> $config Keys must match {@see SelectRelationshipOptions} constructor parameters.
+     *
+     * Twig usage:
+     * ```twig
+     * <twig:K:Entity:SelectRelationship
+     *     :entity="order"
+     *     property="region"
+     *     :config="{ placeholder: '— Region —', role: 'ROLE_EDITOR' }"
+     * />
+     * ```
+     */
     public function mount(
         object $entity,
         string $property,
-        SelectRelationshipOptions $options = new SelectRelationshipOptions(),
+        array $config = [],
     ): void {
         $this->entityClass = get_class($entity);
         $this->entityId    = (string) $this->propertyAccessor->getValue($entity, 'id');
         $this->property    = $property;
-        $this->options     = $options;
+        $this->config     = new SelectRelationshipOptions(...$config);
         $this->entity      = $entity;
 
         $this->resolveTargetType();
@@ -169,12 +179,12 @@ final class SelectRelationship
         /** @phpstan-ignore argument.templateType */
         $repository = $this->em->getRepository($this->targetClass);
 
-        if ($this->options->repositoryMethod !== null) {
-            return $repository->{$this->options->repositoryMethod}(...$this->options->repositoryArgs);
+        if ($this->config->repositoryMethod !== null) {
+            return $repository->{$this->config->repositoryMethod}(...$this->config->repositoryArgs);
         }
 
-        if (!empty($this->options->filter)) {
-            return $repository->findBy($this->options->filter);
+        if (!empty($this->config->filter)) {
+            return $repository->findBy($this->config->filter);
         }
 
         return $repository->findAll();
@@ -186,7 +196,7 @@ final class SelectRelationship
             return (string) $option->value;
         }
 
-        return (string) $this->propertyAccessor->getValue($option, $this->options->valueProperty);
+        return (string) $this->propertyAccessor->getValue($option, $this->config->valueProperty);
     }
 
     public function getOptionLabel(object $option): string
@@ -199,7 +209,7 @@ final class SelectRelationship
             return $option->name;
         }
 
-        return (string) $this->propertyAccessor->getValue($option, $this->options->displayProperty);
+        return (string) $this->propertyAccessor->getValue($option, $this->config->displayProperty);
     }
 
     public function isSelected(object $option): bool
@@ -212,7 +222,7 @@ final class SelectRelationship
         $currentValue = $this->propertyAccessor->getValue($this->getEntity(), $this->property);
 
         if ($currentValue === null) {
-            return $this->options->placeholder;
+            return $this->config->placeholder;
         }
 
         return $this->getOptionLabel($currentValue);
@@ -321,7 +331,7 @@ final class SelectRelationship
         } elseif ($currentValue instanceof BackedEnum) {
             $this->value = (string) $currentValue->value;
         } else {
-            $this->value = (string) $this->propertyAccessor->getValue($currentValue, $this->options->valueProperty);
+            $this->value = (string) $this->propertyAccessor->getValue($currentValue, $this->config->valueProperty);
         }
     }
 }

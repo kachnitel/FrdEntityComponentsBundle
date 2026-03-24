@@ -11,7 +11,7 @@ namespace Kachnitel\EntityComponentsBundle\Components;
  * <twig:K:Entity:CommentsManager
  *     :entity="article"
  *     commentClass="App\\Entity\\Comment"
- *     :options="new CommentsManagerOptions(readOnly: true)"
+ *     :config="{ readOnly: true }"
  * />
  * ```
  */

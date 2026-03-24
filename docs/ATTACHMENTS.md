@@ -115,7 +115,7 @@ Hide the upload form and delete buttons — useful for non-admin users:
 <twig:K:Entity:AttachmentManager
     :entity="product"
     attachmentClass="App\\Entity\\Attachment"
-    :options="new AttachmentManagerOptions(readOnly: true)"
+    :config="{ readOnly: true }"
 />
 ```
 
@@ -131,7 +131,7 @@ Your `Tag` class must implement `TagInterface` and your `Attachment` entity must
 <twig:K:Entity:AttachmentManager
     :entity="product"
     attachmentClass="App\\Entity\\Attachment"
-    :options="new AttachmentManagerOptions(tagClass: 'App\\Entity\\Tag')"
+    :config="{ tagClass: 'App\\Entity\\Tag' }"
 />
 ```
 
@@ -146,7 +146,7 @@ If your entity stores attachments under a different property name (e.g. `media`)
 <twig:K:Entity:AttachmentManager
     :entity="article"
     attachmentClass="App\\Entity\\Media"
-    :options="new AttachmentManagerOptions(property: 'media')"
+    :config="{ property: 'media' }"
 />
 ```
 

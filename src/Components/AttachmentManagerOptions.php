@@ -11,7 +11,7 @@ namespace Kachnitel\EntityComponentsBundle\Components;
  * <twig:K:Entity:AttachmentManager
  *     :entity="product"
  *     attachmentClass="App\\Entity\\UploadedFile"
- *     :options="new AttachmentManagerOptions(readOnly: true)"
+ *     :config="{ readOnly: true }"
  * />
  * ```
  */

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Kachnitel\EntityComponentsBundle\Components;
 
 use Doctrine\ORM\EntityManagerInterface;
@@ -41,7 +43,7 @@ final class CommentsManager extends AbstractController
     public string $commentClass;
 
     #[LiveProp(hydrateWith: 'hydrateOptions', dehydrateWith: 'dehydrateOptions')]
-    public CommentsManagerOptions $options;
+    public CommentsManagerOptions $config;
 
     #[LiveProp(writable: true)]
     public ?int $confirmId = null;
@@ -55,13 +57,25 @@ final class CommentsManager extends AbstractController
         private EntityManagerInterface $entityManager,
         private Security $security
     ) {
-        $this->options = new CommentsManagerOptions();
+        $this->config = new CommentsManagerOptions();
     }
 
+    /**
+     * @param array<string, mixed> $config Keys must match {@see CommentsManagerOptions} constructor parameters.
+     *
+     * Twig usage:
+     * ```twig
+     * <twig:K:Entity:CommentsManager
+     *     :entity="article"
+     *     commentClass="App\\Entity\\Comment"
+     *     :config="{ readOnly: true, property: 'notes' }"
+     * />
+     * ```
+     */
     public function mount(
         CommentableInterface $entity,
         string $commentClass,
-        CommentsManagerOptions $options = new CommentsManagerOptions(),
+        array $config = [],
     ): void {
         if (!is_a($commentClass, CommentInterface::class, true)) {
             throw new \InvalidArgumentException("Comment class must implement CommentInterface. {$commentClass} does not.");
@@ -69,7 +83,7 @@ final class CommentsManager extends AbstractController
 
         $this->mountEntity($entity);
         $this->commentClass = $commentClass;
-        $this->options      = $options;
+        $this->config      = new CommentsManagerOptions(...$config);
         $this->entity       = $entity;
     }
 
@@ -112,7 +126,7 @@ final class CommentsManager extends AbstractController
     public function getComments(): array
     {
         $entity = $this->getEntity();
-        $method = 'get' . ucfirst($this->options->property);
+        $method = 'get' . ucfirst($this->config->property);
 
         if (!method_exists($entity, $method)) {
             throw new Exception(sprintf(
@@ -127,7 +141,7 @@ final class CommentsManager extends AbstractController
         if (!$comments instanceof \Doctrine\Common\Collections\Collection) {
             throw new Exception(sprintf(
                 'Property "%s" is not a Collection on entity "%s"',
-                $this->options->property,
+                $this->config->property,
                 get_class($entity)
             ));
         }
@@ -156,7 +170,7 @@ final class CommentsManager extends AbstractController
                     'placeholder' => 'Add a comment',
                 ],
             ])
-            ->setDisabled($this->options->readOnly)
+            ->setDisabled($this->config->readOnly)
             ->getForm();
     }
 
@@ -165,7 +179,7 @@ final class CommentsManager extends AbstractController
     #[LiveAction]
     public function submit(Request $request): void
     {
-        if ($this->options->readOnly) {
+        if ($this->config->readOnly) {
             $this->errors = ['Cannot add comments in read-only mode'];
 
             return;
@@ -191,7 +205,7 @@ final class CommentsManager extends AbstractController
     #[LiveAction]
     public function deleteComment(#[LiveArg] int $id, #[LiveArg] string $csrfToken): void
     {
-        if ($this->options->readOnly) {
+        if ($this->config->readOnly) {
             throw new Exception('Cannot delete comment in read-only mode');
         }
 

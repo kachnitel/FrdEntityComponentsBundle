@@ -76,15 +76,14 @@ class CommentsManagerFunctionalTest extends ComponentFunctionalTestCase
         $this->assertSame(ComponentTestComment::class, $component->commentClass);
     }
 
-    public function testMountAcceptsOptionsDto(): void
+    public function testMountAcceptsOptionsArray(): void
     {
         $entity    = $this->createEntity();
         $component = $this->getComponent();
-        $options   = new CommentsManagerOptions(readOnly: true, property: 'remarks');
-        $component->mount($entity, ComponentTestComment::class, $options);
+        $component->mount($entity, ComponentTestComment::class, ['readOnly' => true, 'property' => 'remarks']);
 
-        $this->assertTrue($component->options->readOnly);
-        $this->assertSame('remarks', $component->options->property);
+        $this->assertTrue($component->config->readOnly);
+        $this->assertSame('remarks', $component->config->property);
     }
 
     public function testMountThrowsForEntityWithoutGetId(): void
@@ -225,8 +224,8 @@ class CommentsManagerFunctionalTest extends ComponentFunctionalTestCase
     {
         $component = $this->getComponent();
 
-        $this->assertFalse($component->options->readOnly);
-        $this->assertSame('comments', $component->options->property);
+        $this->assertFalse($component->config->readOnly);
+        $this->assertSame('comments', $component->config->property);
         $this->assertIsArray($component->errors);
         $this->assertEmpty($component->errors);
         $this->assertNull($component->confirmId);

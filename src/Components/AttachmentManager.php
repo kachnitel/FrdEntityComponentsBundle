@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Kachnitel\EntityComponentsBundle\Components;
 
 use Doctrine\ORM\EntityManagerInterface;
@@ -45,7 +47,7 @@ final class AttachmentManager extends AbstractController
     public string $attachmentClass;
 
     #[LiveProp(hydrateWith: 'hydrateOptions', dehydrateWith: 'dehydrateOptions')]
-    public AttachmentManagerOptions $options;
+    public AttachmentManagerOptions $config;
 
     public array $errors = [];
 
@@ -57,13 +59,25 @@ final class AttachmentManager extends AbstractController
         private LoggerInterface $logger,
         private readonly FileHandlerInterface $fileHandler
     ) {
-        $this->options = new AttachmentManagerOptions();
+        $this->config = new AttachmentManagerOptions();
     }
 
+    /**
+     * @param array<string, mixed> $config Keys must match {@see AttachmentManagerOptions} constructor parameters.
+     *
+     * Twig usage:
+     * ```twig
+     * <twig:K:Entity:AttachmentManager
+     *     :entity="product"
+     *     attachmentClass="App\\Entity\\Attachment"
+     *     :config="{ readOnly: true, tagClass: 'App\\Entity\\Tag' }"
+     * />
+     * ```
+     */
     public function mount(
         AttachableInterface $entity,
         string $attachmentClass,
-        AttachmentManagerOptions $options = new AttachmentManagerOptions(),
+        array $config = [],
     ): void {
         if (!is_a($attachmentClass, AttachmentInterface::class, true)) {
             throw new \InvalidArgumentException("Attachment class must implement AttachmentInterface. {$attachmentClass} does not.");
@@ -71,7 +85,7 @@ final class AttachmentManager extends AbstractController
 
         $this->mountEntity($entity);
         $this->attachmentClass = $attachmentClass;
-        $this->options         = $options;
+        $this->config         = new AttachmentManagerOptions(...$config);
         $this->entity          = $entity;
     }
 
@@ -116,7 +130,7 @@ final class AttachmentManager extends AbstractController
     public function getAttachments(): array
     {
         $entity = $this->getEntity();
-        $method = 'get' . ucfirst($this->options->property);
+        $method = 'get' . ucfirst($this->config->property);
 
         if (!method_exists($entity, $method)) {
             throw new Exception(sprintf(
@@ -131,7 +145,7 @@ final class AttachmentManager extends AbstractController
         if (!$attachments instanceof \Doctrine\Common\Collections\Collection) {
             throw new Exception(sprintf(
                 'Property "%s" is not a Collection on entity "%s"',
-                $this->options->property,
+                $this->config->property,
                 get_class($entity)
             ));
         }
@@ -144,7 +158,7 @@ final class AttachmentManager extends AbstractController
         $entity = $this->entityManager->getRepository($this->entityClass)->find($this->entityId);
 
         return $this->createFormBuilder($entity)
-            ->add($this->options->property, CollectionType::class, [
+            ->add($this->config->property, CollectionType::class, [
                 'label'          => 'Upload Files',
                 'entry_type'     => FileType::class,
                 'entry_options'  => ['label' => false],
@@ -154,7 +168,7 @@ final class AttachmentManager extends AbstractController
                 'required'       => false,
                 'mapped'         => false,
             ])
-            ->setDisabled($this->options->readOnly)
+            ->setDisabled($this->config->readOnly)
             ->getForm();
     }
 
@@ -163,7 +177,7 @@ final class AttachmentManager extends AbstractController
     #[LiveAction]
     public function addFile(): void
     {
-        $this->formValues[$this->options->property][] = null;
+        $this->formValues[$this->config->property][] = null;
     }
 
     #[LiveAction]
@@ -176,7 +190,7 @@ final class AttachmentManager extends AbstractController
         }
 
         try {
-            $files = $request->files->get('form')[$this->options->property] ?? [];
+            $files = $request->files->get('form')[$this->config->property] ?? [];
             $this->handleFiles($files);
 
             $this->entityManager->flush();
@@ -263,7 +277,7 @@ final class AttachmentManager extends AbstractController
     private function getMethod(string $prefix): string
     {
         $entity           = $this->getEntity();
-        $singularProperty = rtrim($this->options->property, 's');
+        $singularProperty = rtrim($this->config->property, 's');
         $method           = $prefix . ucfirst($singularProperty);
 
         if (method_exists($entity, $method)) {

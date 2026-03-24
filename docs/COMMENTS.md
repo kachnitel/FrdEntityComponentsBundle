@@ -78,7 +78,7 @@ Hide the text input and delete buttons — useful for archived content or read-o
 <twig:K:Entity:CommentsManager
     :entity="article"
     commentClass="App\\Entity\\Comment"
-    :options="new CommentsManagerOptions(readOnly: true)"
+    :config="{ readOnly: true }"
 />
 ```
 
@@ -93,7 +93,7 @@ If your entity stores comments under a different property name (e.g. `notes`):
 <twig:K:Entity:CommentsManager
     :entity="ticket"
     commentClass="App\\Entity\\Note"
-    :options="new CommentsManagerOptions(property: 'notes')"
+    :config="{ property: 'notes' }"
 />
 ```
 

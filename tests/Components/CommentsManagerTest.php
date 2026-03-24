@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Kachnitel\EntityComponentsBundle\Tests\Components;
 
 use Kachnitel\EntityComponentsBundle\Components\CommentsManagerOptions;
@@ -16,8 +18,8 @@ class CommentsManagerTest extends ComponentTestCase
     {
         $component = $this->factory->get('K:Entity:CommentsManager');
 
-        $this->assertFalse($component->options->readOnly);
-        $this->assertSame('comments', $component->options->property);
+        $this->assertFalse($component->config->readOnly);
+        $this->assertSame('comments', $component->config->property);
         $this->assertIsArray($component->errors);
         $this->assertEmpty($component->errors);
     }
@@ -28,10 +30,10 @@ class CommentsManagerTest extends ComponentTestCase
         $this->assertNull($component->confirmId);
     }
 
-    public function testReadOnlyOptionCanBeSet(): void
+    public function testReadOnlyOptionCanBeSetViaDto(): void
     {
         $component = $this->factory->get('K:Entity:CommentsManager');
-        $component->options = new CommentsManagerOptions(readOnly: true);
-        $this->assertTrue($component->options->readOnly);
+        $component->config = new CommentsManagerOptions(readOnly: true);
+        $this->assertTrue($component->config->readOnly);
     }
 }

@@ -6,7 +6,6 @@ namespace Kachnitel\EntityComponentsBundle\Tests\Components;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Kachnitel\EntityComponentsBundle\Components\SelectRelationship;
-use Kachnitel\EntityComponentsBundle\Components\SelectRelationshipOptions;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -90,9 +89,8 @@ class SelectRelationshipEnumDisplayTest extends TestCase
         /** @var EntityManagerInterface&MockObject $em */
         $em = $this->createMock(EntityManagerInterface::class);
 
-        $options   = new SelectRelationshipOptions(placeholder: 'Pick one');
         $component = new SelectRelationship($em, $propertyInfo, $propertyAccessor);
-        $component->mount($entity, 'status', $options);
+        $component->mount($entity, 'status', ['placeholder' => 'Pick one']);
 
         $this->assertSame('Pick one', $component->getCurrentDisplayValue());
     }

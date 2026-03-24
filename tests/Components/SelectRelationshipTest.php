@@ -63,19 +63,19 @@ class SelectRelationshipTest extends ComponentTestCase
     {
         $component = $this->factory->get('K:Entity:SelectRelationship');
 
-        $this->assertSame('-', $component->options->placeholder);
-        $this->assertSame('id', $component->options->valueProperty);
-        $this->assertSame('name', $component->options->displayProperty);
-        $this->assertFalse($component->options->disableEmpty);
-        $this->assertFalse($component->options->disabled);
-        $this->assertNull($component->options->role);
-        $this->assertNull($component->options->viewRole);
-        $this->assertNull($component->options->label);
-        $this->assertNull($component->options->repositoryMethod);
-        $this->assertIsArray($component->options->filter);
-        $this->assertEmpty($component->options->filter);
-        $this->assertIsArray($component->options->repositoryArgs);
-        $this->assertEmpty($component->options->repositoryArgs);
+        $this->assertSame('-', $component->config->placeholder);
+        $this->assertSame('id', $component->config->valueProperty);
+        $this->assertSame('name', $component->config->displayProperty);
+        $this->assertFalse($component->config->disableEmpty);
+        $this->assertFalse($component->config->disabled);
+        $this->assertNull($component->config->role);
+        $this->assertNull($component->config->viewRole);
+        $this->assertNull($component->config->label);
+        $this->assertNull($component->config->repositoryMethod);
+        $this->assertIsArray($component->config->filter);
+        $this->assertEmpty($component->config->filter);
+        $this->assertIsArray($component->config->repositoryArgs);
+        $this->assertEmpty($component->config->repositoryArgs);
     }
 
     public function testSelectRelationshipValueProperty(): void
@@ -123,7 +123,7 @@ class SelectRelationshipTest extends ComponentTestCase
         $this->assertSame('5', $component->value);
     }
 
-    public function testMountAcceptsOptionsDto(): void
+    public function testMountAcceptsOptionsArray(): void
     {
         $entity = new TestEntity(42);
 
@@ -141,12 +141,11 @@ class SelectRelationshipTest extends ComponentTestCase
         /** @var EntityManagerInterface&MockObject $em */
         $em = $this->createMock(EntityManagerInterface::class);
 
-        $options   = new SelectRelationshipOptions(placeholder: 'Select...', role: 'ROLE_ADMIN');
         $component = new SelectRelationship($em, $propertyInfo, $propertyAccessor);
-        $component->mount($entity, 'related', $options);
+        $component->mount($entity, 'related', ['placeholder' => 'Select...', 'role' => 'ROLE_ADMIN']);
 
-        $this->assertSame('Select...', $component->options->placeholder);
-        $this->assertSame('ROLE_ADMIN', $component->options->role);
+        $this->assertSame('Select...', $component->config->placeholder);
+        $this->assertSame('ROLE_ADMIN', $component->config->role);
     }
 
     public function testMountInitializesNullValueWhenPropertyIsNull(): void
@@ -309,9 +308,8 @@ class SelectRelationshipTest extends ComponentTestCase
         $em = $this->createMock(EntityManagerInterface::class);
         $em->method('getRepository')->willReturn($repository);
 
-        $options   = new SelectRelationshipOptions(filter: ['active' => true]);
         $component = new SelectRelationship($em, $propertyInfo, $propertyAccessor);
-        $component->mount($entity, 'related', $options);
+        $component->mount($entity, 'related', ['filter' => ['active' => true]]);
 
         $result = $component->getOptions();
 
@@ -348,9 +346,11 @@ class SelectRelationshipTest extends ComponentTestCase
         $em = $this->createMock(EntityManagerInterface::class);
         $em->method('getRepository')->willReturn($repository);
 
-        $options   = new SelectRelationshipOptions(repositoryMethod: 'findByRoles', repositoryArgs: [['ROLE_MANAGER']]);
         $component = new SelectRelationship($em, $propertyInfo, $propertyAccessor);
-        $component->mount($entity, 'related', $options);
+        $component->mount($entity, 'related', [
+            'repositoryMethod' => 'findByRoles',
+            'repositoryArgs'   => [['ROLE_MANAGER']],
+        ]);
 
         $result = $component->getOptions();
 
@@ -593,9 +593,8 @@ class SelectRelationshipTest extends ComponentTestCase
         /** @var EntityManagerInterface&MockObject $em */
         $em = $this->createMock(EntityManagerInterface::class);
 
-        $options   = new SelectRelationshipOptions(placeholder: 'Select...');
         $component = new SelectRelationship($em, $propertyInfo, $propertyAccessor);
-        $component->mount($entity, 'related', $options);
+        $component->mount($entity, 'related', ['placeholder' => 'Select...']);
 
         $this->assertSame('Select...', $component->getCurrentDisplayValue());
     }
@@ -906,9 +905,8 @@ class SelectRelationshipTest extends ComponentTestCase
         /** @var EntityManagerInterface&MockObject $em */
         $em = $this->createMock(EntityManagerInterface::class);
 
-        $options   = new SelectRelationshipOptions(valueProperty: 'code', displayProperty: 'title');
         $component = new SelectRelationship($em, $propertyInfo, $propertyAccessor);
-        $component->options = $options;
+        $component->config = new SelectRelationshipOptions(valueProperty: 'code', displayProperty: 'title');
 
         $this->assertSame('ABC123', $component->getOptionValue($entity));
         $this->assertSame('Custom Title', $component->getOptionLabel($entity));

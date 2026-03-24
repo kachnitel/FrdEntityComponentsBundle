@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Kachnitel\EntityComponentsBundle\Tests\Components;
 
 use Kachnitel\EntityComponentsBundle\Components\AttachmentManagerOptions;
@@ -16,24 +18,24 @@ class AttachmentManagerTest extends ComponentTestCase
     {
         $component = $this->factory->get('K:Entity:AttachmentManager');
 
-        $this->assertFalse($component->options->readOnly);
-        $this->assertSame('attachments', $component->options->property);
-        $this->assertNull($component->options->tagClass);
+        $this->assertFalse($component->config->readOnly);
+        $this->assertSame('attachments', $component->config->property);
+        $this->assertNull($component->config->tagClass);
         $this->assertIsArray($component->errors);
         $this->assertEmpty($component->errors);
     }
 
-    public function testAttachmentManagerOptionsCanBeCustomised(): void
+    public function testAttachmentManagerOptionsCanBeCustomisedViaDto(): void
     {
         $component = $this->factory->get('K:Entity:AttachmentManager');
-        $component->options = new AttachmentManagerOptions(
+        $component->config = new AttachmentManagerOptions(
             readOnly: true,
             property: 'files',
             tagClass: 'App\\Entity\\Tag',
         );
 
-        $this->assertTrue($component->options->readOnly);
-        $this->assertSame('files', $component->options->property);
-        $this->assertSame('App\\Entity\\Tag', $component->options->tagClass);
+        $this->assertTrue($component->config->readOnly);
+        $this->assertSame('files', $component->config->property);
+        $this->assertSame('App\\Entity\\Tag', $component->config->tagClass);
     }
 }

@@ -106,12 +106,12 @@ Kachnitel\EntityComponentsBundle\Components\Field\EditabilityResolverInterface:
 
 **Level 2:** Read-only display, custom collection property:
 ```twig
-:options="new AttachmentManagerOptions(readOnly: true, property: 'media')"
+:config="{ readOnly: true, property: 'media' }"
 ```
 
 **Level 3:** Per-attachment tagging:
 ```twig
-:options="new AttachmentManagerOptions(tagClass: 'App\\Entity\\Tag')"
+:config="{ tagClass: 'App\\Entity\\Tag' }"
 ```
 
 **Details:** [Attachments Guide](docs/ATTACHMENTS.md)
@@ -128,7 +128,7 @@ Kachnitel\EntityComponentsBundle\Components\Field\EditabilityResolverInterface:
 
 **Level 2:** Read-only display, custom collection property:
 ```twig
-:options="new CommentsManagerOptions(readOnly: true, property: 'notes')"
+:config="{ readOnly: true, property: 'notes' }"
 ```
 
 **Level 3:** Limit text length — add a `MAX_TEXT_LENGTH` constant to your Comment entity and the textarea `maxlength` is set automatically.
@@ -147,16 +147,16 @@ Kachnitel\EntityComponentsBundle\Components\Field\EditabilityResolverInterface:
 
 **Level 2:** Access control, placeholder, label:
 ```twig
-:options="new SelectRelationshipOptions(
+:config="{
     role: 'ROLE_EDITOR',
     placeholder: '— Select Region —',
-)"
+}"
 ```
 
 **Level 3:** Filter records or use a custom repository method:
 ```twig
-:options="new SelectRelationshipOptions(filter: { active: true })"
-:options="new SelectRelationshipOptions(repositoryMethod: 'findActive')"
+:config="{ filter: { active: true } }"
+:config="{ repositoryMethod: 'findActive' }"
 ```
 
 **Details:** [SelectRelationship Guide](docs/SELECT_RELATIONSHIP.md)
