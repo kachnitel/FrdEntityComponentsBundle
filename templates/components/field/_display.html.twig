@@ -7,17 +7,21 @@
  # Type dispatch order:
  #   1. null
  #   2. iterable (array, Collection)
- #   3. BackedEnum  — has .value, no .id
- #   4. UnitEnum    — has .name, no .value, no .id
- #   5. Doctrine entity / any object with .id
+ #   3. DateTimeInterface (DateTime, DateTimeImmutable) — rendered via |date filter
+ #   4. BackedEnum  — has .value, no .id
+ #   5. UnitEnum    — has .name, no .value, no .id
+ #   6. Doctrine entity / any object with .id
  #         → __toString() → .name → .label → .title → "#ID" fallback
- #   6. bool → "Yes" / "No"
- #   7. scalar (int / float / string)
+ #   7. bool → "Yes" / "No"
+ #   8. scalar (int / float / string)
  #}
 {% if value is null %}
     <span class="text-muted">—</span>
 {% elseif value is iterable %}
     {{ value|join(', ') }}
+{% elseif value is datetime %}
+    {# DateTime and DateTimeImmutable have no __toString(); use |date filter #}
+    {{ value|date('Y-m-d H:i') }}
 {% elseif value.value is defined and value.id is not defined %}
     {# BackedEnum #}
     {{ value.value }}

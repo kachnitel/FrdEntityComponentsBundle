@@ -7,6 +7,7 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 use Kachnitel\EntityComponentsBundle\Components\Field\DefaultEditabilityResolver;
 use Kachnitel\EntityComponentsBundle\Components\Field\EditabilityResolverInterface;
 use Kachnitel\EntityComponentsBundle\Twig\ColorConverterExtension;
+use Kachnitel\EntityComponentsBundle\Twig\UtilExtension;
 
 return static function (ContainerConfigurator $container): void {
     $services = $container->services()
@@ -60,5 +61,7 @@ return static function (ContainerConfigurator $container): void {
 
     // ── Twig extension ─────────────────────────────────────────────────────────
     $services->set(ColorConverterExtension::class)
+        ->tag('twig.extension');
+    $services->set(UtilExtension::class)
         ->tag('twig.extension');
 };

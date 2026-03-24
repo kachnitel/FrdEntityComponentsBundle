@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Kachnitel\EntityComponentsBundle\Tests\Field;
 
+use DateTime;
+use DateTimeImmutable;
 use Kachnitel\EntityComponentsBundle\Components\Field\DefaultEditabilityResolver;
 use Kachnitel\EntityComponentsBundle\DependencyInjection\Compiler\AttachmentManagerPass;
 use Kachnitel\EntityComponentsBundle\KachnitelEntityComponentsBundle;
@@ -23,6 +25,7 @@ use PHPUnit\Framework\Attributes\UsesClass;
  *   - bool true / false
  *   - int, float
  *   - string (empty and non-empty)
+ *   - DateTime / DateTimeImmutable  → formatted via |date filter
  *   - BackedEnum              → enum .value string
  *   - UnitEnum                → enum .name string
  *   - iterable / array        → joined values
@@ -125,6 +128,50 @@ class DisplayTemplateTest extends FieldTestCase
         $this->assertIsString($this->renderDisplay([]));
     }
 
+    // ── DateTime / DateTimeImmutable ──────────────────────────────────────────
+
+    /**
+     * This is the exact crash case from the bug report.
+     * DateTime has no __toString() and must NOT be passed bare to {{ value }}.
+     */
+    public function testDateTimeDoesNotThrowStringConversionError(): void
+    {
+        $dt = new DateTime('2025-03-15 12:00:00');
+
+        // Must not throw "Object of class DateTime could not be converted to string"
+        $this->assertIsString($this->renderDisplay($dt));
+    }
+
+    public function testDateTimeRendersFormattedDate(): void
+    {
+        $dt   = new DateTime('2025-06-15 14:30:00');
+        $html = $this->renderDisplay($dt);
+
+        $this->assertStringContainsString('2025-06-15', $html);
+        $this->assertStringNotContainsString('text-muted', $html, 'DateTime must not render as null placeholder');
+    }
+
+    public function testDateTimeRendersTime(): void
+    {
+        $dt   = new DateTime('2025-06-15 14:30:00');
+        $html = $this->renderDisplay($dt);
+
+        $this->assertStringContainsString('14:30', $html);
+    }
+
+    public function testDateTimeImmutableDoesNotThrow(): void
+    {
+        $this->assertIsString($this->renderDisplay(new DateTimeImmutable('2024-12-31')));
+    }
+
+    public function testDateTimeImmutableRendersFormattedDate(): void
+    {
+        $dt   = new DateTimeImmutable('2024-01-01 09:00:00');
+        $html = $this->renderDisplay($dt);
+
+        $this->assertStringContainsString('2024-01-01', $html);
+    }
+
     // ── enums ─────────────────────────────────────────────────────────────────
 
     public function testBackedEnumRendersEnumValue(): void
@@ -222,23 +269,25 @@ class DisplayTemplateTest extends FieldTestCase
      */
     public static function noThrowProvider(): iterable
     {
-        yield 'null'            => [null];
-        yield 'true'            => [true];
-        yield 'false'           => [false];
-        yield 'int zero'        => [0];
-        yield 'int positive'    => [42];
-        yield 'int negative'    => [-7];
-        yield 'float'           => [1.5];
-        yield 'empty string'    => [''];
-        yield 'string'          => ['hello'];
-        yield 'empty array'     => [[]];
-        yield 'string array'    => [['a', 'b']];
-        yield 'backed enum'     => [DisplayTestBackedStatus::Active];
-        yield 'unit enum'       => [DisplayTestUnitStatus::Pending];
-        yield 'obj name'        => [new DisplayTestEntityWithName('x')];
-        yield 'obj label'       => [new DisplayTestEntityWithLabel('x')];
-        yield 'obj title'       => [new DisplayTestEntityWithTitle('x')];
-        yield 'obj id only'     => [new DisplayTestEntityWithIdOnly(1)];
+        yield 'null'               => [null];
+        yield 'true'               => [true];
+        yield 'false'              => [false];
+        yield 'int zero'           => [0];
+        yield 'int positive'       => [42];
+        yield 'int negative'       => [-7];
+        yield 'float'              => [1.5];
+        yield 'empty string'       => [''];
+        yield 'string'             => ['hello'];
+        yield 'empty array'        => [[]];
+        yield 'string array'       => [['a', 'b']];
+        yield 'backed enum'        => [DisplayTestBackedStatus::Active];
+        yield 'unit enum'          => [DisplayTestUnitStatus::Pending];
+        yield 'obj name'           => [new DisplayTestEntityWithName('x')];
+        yield 'obj label'          => [new DisplayTestEntityWithLabel('x')];
+        yield 'obj title'          => [new DisplayTestEntityWithTitle('x')];
+        yield 'obj id only'        => [new DisplayTestEntityWithIdOnly(1)];
+        yield 'datetime'           => [new DateTime('2025-01-01 10:00:00')];
+        yield 'datetime_immutable' => [new DateTimeImmutable('2025-06-15 14:30:00')];
     }
 
     #[DataProvider('noThrowProvider')]
