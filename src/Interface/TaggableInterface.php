@@ -6,23 +6,26 @@ use Doctrine\Common\Collections\Collection;
 
 /**
  * Interface for entities that support tagging
+ * @see Kachnitel\EntityComponentsBundle\Trait\TaggableTrait
+ *
+ * @template T of TagInterface
  */
 interface TaggableInterface
 {
     /**
      * Get all tags associated with this entity
      *
-     * @return Collection<int, TagInterface>
+     * @return Collection<int, T>
      */
     public function getTags(): Collection;
 
     /**
-     * Add a tag to this entity
+     * @param T $tag
      */
-    public function addTag(TagInterface $tag): self;
+    public function addTag(TagInterface $tag): static;
 
     /**
-     * Remove a tag from this entity
+     * @param T $tag
      */
-    public function removeTag(TagInterface $tag): self;
+    public function removeTag(TagInterface $tag): static;
 }

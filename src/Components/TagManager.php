@@ -14,6 +14,9 @@ use Symfony\UX\LiveComponent\ComponentToolsTrait;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Symfony\UX\TwigComponent\Attribute\ExposeInTemplate;
 
+/**
+ * @template T of TagInterface
+ */
 #[AsLiveComponent('K:Entity:TagManager', template: '@KachnitelEntityComponents/components/TagManager.html.twig')]
 final class TagManager
 {
@@ -33,6 +36,7 @@ final class TagManager
     #[LiveProp(writable: true)]
     public array $tagIds = [];
 
+    /** @var TaggableInterface<T>|null */
     #[ExposeInTemplate(getter: 'getEntity')]
     private ?TaggableInterface $entity = null;
 
@@ -40,8 +44,13 @@ final class TagManager
         private EntityManagerInterface $entityManager
     ) {}
 
+    /**
+     * @param TaggableInterface<T> $entity
+     * @param class-string<T> $tagClass
+     */
     public function mount(TaggableInterface $entity, string $tagClass): void
     {
+        // @phpstan-ignore-next-line function.alreadyNarrowedType
         if (!is_a($tagClass, TagInterface::class, true)) {
             throw new \InvalidArgumentException("Tag class must implement TagInterface. {$tagClass} does not.");
         }
@@ -52,6 +61,9 @@ final class TagManager
         $this->tagIds   = array_map(fn($tag) => $tag->getId(), $entity->getTags()->toArray());
     }
 
+    /**
+     * @return TaggableInterface<T>
+     */
     public function getEntity(): TaggableInterface
     {
         if (!$this->entity) {

@@ -34,6 +34,8 @@ use Symfony\UX\TwigComponent\Attribute\ExposeInTemplate;
  * serves a distinct, non-removable role in the component's feature set.
  *
  * @SuppressWarnings(CouplingBetweenObjects)
+ *
+ * @template T of AttachmentInterface
  */
 #[AsLiveComponent('K:Entity:AttachmentManager', template: '@KachnitelEntityComponents/components/AttachmentManager.html.twig')]
 final class AttachmentManager extends AbstractController
@@ -43,6 +45,7 @@ final class AttachmentManager extends AbstractController
     use ComponentToolsTrait;
     use EntityLiveComponentTrait;
 
+    /** @var class-string<T> */
     #[LiveProp]
     public string $attachmentClass;
 
@@ -51,6 +54,7 @@ final class AttachmentManager extends AbstractController
 
     public array $errors = [];
 
+    /** @var AttachableInterface<T>|null */
     #[ExposeInTemplate(getter: 'getEntity')]
     private ?AttachableInterface $entity = null;
 
@@ -63,7 +67,6 @@ final class AttachmentManager extends AbstractController
     }
 
     /**
-     * @param array<string, mixed> $config Keys must match {@see AttachmentManagerOptions} constructor parameters.
      *
      * Twig usage:
      * ```twig
@@ -73,12 +76,17 @@ final class AttachmentManager extends AbstractController
      *     :config="{ readOnly: true, tagClass: 'App\\Entity\\Tag' }"
      * />
      * ```
+     *
+     * @param AttachableInterface<T> $entity
+     * @param class-string<T> $attachmentClass
+     * @param array<string, mixed> $config Keys must match {@see AttachmentManagerOptions} constructor parameters.
      */
     public function mount(
         AttachableInterface $entity,
         string $attachmentClass,
         array $config = [],
     ): void {
+        // @phpstan-ignore-next-line function.alreadyNarrowedType
         if (!is_a($attachmentClass, AttachmentInterface::class, true)) {
             throw new \InvalidArgumentException("Attachment class must implement AttachmentInterface. {$attachmentClass} does not.");
         }
@@ -117,6 +125,9 @@ final class AttachmentManager extends AbstractController
 
     // ── Entity access ─────────────────────────────────────────────────────────
 
+    /**
+     * @return AttachableInterface<T>
+     */
     public function getEntity(): AttachableInterface
     {
         if (!$this->entity) {

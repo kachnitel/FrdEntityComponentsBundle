@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Kachnitel\EntityComponentsBundle\Trait;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\Proxy;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 
@@ -62,12 +63,7 @@ trait EntityLiveComponentTrait
             );
         }
 
-        $reflection = new \ReflectionClass($entity);
-        while ($reflection->getParentClass() && str_contains($reflection->getName(), 'Proxies')) {
-            $reflection = $reflection->getParentClass();
-        }
-
-        $this->entityClass = $reflection->getName();
+        $this->entityClass = $this->getRealClass($entity);
         $this->entityId    = (int) $entity->getId();
     }
 
@@ -85,9 +81,9 @@ trait EntityLiveComponentTrait
      * // PHPStan knows $this->entity is CommentableInterface — no @var needed
      * ```
      *
-     * @template T of object
-     * @param class-string<T> $interface FQCN of the interface the entity must implement.
-     * @return T
+     * @template TInterface of object
+     * @param class-string<TInterface> $interface FQCN of the interface the entity must implement.
+     * @return TInterface
      *
      * @throws NotFoundHttpException     when the entity no longer exists in the database
      * @throws \InvalidArgumentException when the entity does not implement $interface
@@ -109,7 +105,20 @@ trait EntityLiveComponentTrait
             );
         }
 
-        /** @var T $entity */
+        /** @var TInterface $entity */
         return $entity;
+    }
+
+    /**
+     * Get the real class name (unwrap Doctrine proxies).
+     * REVIEW: copied from admin-bundle
+     */
+    private function getRealClass(string|object $subj): string
+    {
+        if (is_subclass_of($subj, Proxy::class, true)) {
+            return get_parent_class($subj);
+        }
+
+        return $subj::class;
     }
 }

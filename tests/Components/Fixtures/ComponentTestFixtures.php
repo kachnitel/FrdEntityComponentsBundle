@@ -51,10 +51,14 @@ class ComponentTestTag implements TagInterface
 
 // ── Taggable entity ───────────────────────────────────────────────────────────
 
+/**
+ * @implements TaggableInterface<ComponentTestTag>
+ */
 #[ORM\Entity]
 #[ORM\Table(name: 'comp_test_taggable')]
 class ComponentTestTaggableEntity implements TaggableInterface
 {
+    /** @use TaggableTrait<ComponentTestTag> */
     use TaggableTrait;
 
     #[ORM\Id]
@@ -67,10 +71,7 @@ class ComponentTestTaggableEntity implements TaggableInterface
     private string $name = '';
 
     /**
-     * Typed as TagInterface (not ComponentTestTag) to satisfy TaggableTrait's
-     * addTag(TagInterface) / removeTag(TagInterface) method signatures.
-     *
-     * @var Collection<int, TagInterface>
+     * @var Collection<int, ComponentTestTag>
      */
     #[ORM\ManyToMany(targetEntity: ComponentTestTag::class)]
     #[ORM\JoinTable(name: 'comp_test_taggable_tags')]

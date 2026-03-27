@@ -12,9 +12,13 @@ use Kachnitel\EntityComponentsBundle\Interface\TagInterface;
  * Note: You must add the ORM\ManyToMany mapping in your entity class:
  * #[ORM\ManyToMany(targetEntity: YourTagClass::class)]
  * private Collection $tags;
+ *
+ *
+ * @template T of TagInterface
  */
 trait TaggableTrait
 {
+    /** @var Collection<int, T> $tags */
     private Collection $tags;
 
     /**
@@ -26,14 +30,17 @@ trait TaggableTrait
     }
 
     /**
-     * @return Collection<int, TagInterface>
+     * @return Collection<int, T>
      */
     public function getTags(): Collection
     {
         return $this->tags;
     }
 
-    public function addTag(TagInterface $tag): self
+    /**
+     * @param T $tag
+     */
+    public function addTag(TagInterface $tag): static
     {
         if (!$this->tags->contains($tag)) {
             $this->tags[] = $tag;
@@ -42,7 +49,10 @@ trait TaggableTrait
         return $this;
     }
 
-    public function removeTag(TagInterface $tag): self
+    /**
+     * @param T $tag
+     */
+    public function removeTag(TagInterface $tag): static
     {
         $this->tags->removeElement($tag);
 

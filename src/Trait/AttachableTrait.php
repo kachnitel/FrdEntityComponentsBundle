@@ -6,8 +6,12 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Kachnitel\EntityComponentsBundle\Interface\AttachmentInterface;
 
+/**
+ * @template T of AttachmentInterface
+ */
 trait AttachableTrait
 {
+    /** @var Collection<int, T> $attachments */
     private Collection $attachments;
 
     private function initializeAttachments(): void
@@ -16,14 +20,17 @@ trait AttachableTrait
     }
 
     /**
-     * @return Collection<int, AttachmentInterface>
+     * @return Collection<int, T>
      */
     public function getAttachments(): Collection
     {
         return $this->attachments;
     }
 
-    public function addAttachment(AttachmentInterface $attachment): self
+    /**
+     * @param T $attachment
+     */
+    public function addAttachment(AttachmentInterface $attachment): static
     {
         if (!$this->attachments->contains($attachment)) {
             $this->attachments->add($attachment);
@@ -32,7 +39,10 @@ trait AttachableTrait
         return $this;
     }
 
-    public function removeAttachment(AttachmentInterface $attachment): self
+    /**
+     * @param T $attachment
+     */
+    public function removeAttachment(AttachmentInterface $attachment): static
     {
         $this->attachments->removeElement($attachment);
 

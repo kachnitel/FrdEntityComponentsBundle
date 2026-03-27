@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Kachnitel\EntityComponentsBundle\Tests\Components;
 
 use Kachnitel\EntityComponentsBundle\Components\TagManager;
+use Kachnitel\EntityComponentsBundle\Interface\TaggableInterface;
 use Kachnitel\EntityComponentsBundle\Tests\Components\Fixtures\ComponentTestTag;
 use Kachnitel\EntityComponentsBundle\Tests\Components\Fixtures\ComponentTestTaggableEntity;
+use Kachnitel\EntityComponentsBundle\Trait\TaggableTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 
@@ -43,9 +45,11 @@ class TagManagerFunctionalTest extends ComponentFunctionalTestCase
         return ['entity' => $entity, 'tag1' => $tag1, 'tag2' => $tag2, 'tag3' => $tag3];
     }
 
+    /**
+     * @return TagManager<ComponentTestTag>
+     */
     private function getComponent(): TagManager
     {
-        /** @var TagManager */
         return $this->factory->get('K:Entity:TagManager');
     }
 
@@ -86,17 +90,8 @@ class TagManagerFunctionalTest extends ComponentFunctionalTestCase
 
     public function testMountThrowsForEntityWithoutGetId(): void
     {
-        $badEntity = new class implements \Kachnitel\EntityComponentsBundle\Interface\TaggableInterface {
-            use \Kachnitel\EntityComponentsBundle\Trait\TaggableTrait;
-
-            /** @var \Doctrine\Common\Collections\Collection<int, \Kachnitel\EntityComponentsBundle\Interface\TagInterface> */
-            private \Doctrine\Common\Collections\Collection $tags;
-
-            public function __construct()
-            {
-                $this->initializeTags();
-            }
-        };
+        /** @implements TaggableInterface<ComponentTestTag> */
+        $badEntity = new BadTaggableEntity();
 
         $component = $this->getComponent();
 
@@ -117,7 +112,7 @@ class TagManagerFunctionalTest extends ComponentFunctionalTestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('TagInterface');
 
-        $component->mount($entity, \stdClass::class);
+        $component->mount($entity, \stdClass::class); // @phpstan-ignore argument.type
     }
 
     // ── getEntity() ───────────────────────────────────────────────────────────
@@ -334,5 +329,20 @@ class TagManagerFunctionalTest extends ComponentFunctionalTestCase
         $this->assertFalse($component->showingTags);
         $this->assertIsArray($component->tagIds);
         $this->assertEmpty($component->tagIds);
+    }
+}
+
+/**
+ * Mock entity without a getId() method to test validation.
+ * @implements TaggableInterface<ComponentTestTag>
+ */
+class BadTaggableEntity implements TaggableInterface
+{
+    /** @use TaggableTrait<ComponentTestTag> */
+    use TaggableTrait;
+
+    public function __construct()
+    {
+        $this->initializeTags();
     }
 }

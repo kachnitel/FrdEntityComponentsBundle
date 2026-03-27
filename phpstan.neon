@@ -20,9 +20,6 @@ parameters:
         # Missing iterable value types in array declarations — intentional for brevity
         - identifier: missingType.iterableValue
 
-        # Traits are consumed by classes outside this bundle's analysis scope
-        - identifier: trait.unused
-
         # Negated boolean expressions arising from PHPDoc type narrowing
         - '#Negated boolean expression is always false#'
 
