@@ -2,10 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Kachnitel\EntityComponentsBundle\Tests\Components;
+namespace Kachnitel\EntityComponentsBundle\Tests\Doctrine;
 
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
+use Kachnitel\EntityComponentsBundle\Interface\AttachmentInterface;
+use Kachnitel\EntityComponentsBundle\Interface\CommentInterface;
+use Kachnitel\EntityComponentsBundle\Interface\FileHandlerInterface;
+use Kachnitel\EntityComponentsBundle\Interface\TagInterface;
 use Kachnitel\EntityComponentsBundle\KachnitelEntityComponentsBundle;
+use Kachnitel\EntityComponentsBundle\Tests\Doctrine\Fixtures;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Bundle\SecurityBundle\SecurityBundle;
@@ -18,12 +23,14 @@ use Symfony\UX\StimulusBundle\StimulusBundle;
 use Symfony\UX\TwigComponent\TwigComponentBundle;
 
 /**
- * Minimal kernel for component functional tests that need real Doctrine ORM.
+ * Minimal kernel for JoinTableNormalizer integration tests.
  *
- * Mirrors the setup in FieldTestKernel but maps tests/Components/Fixtures/
- * for the ORM entity scan.
+ * Configures resolve_target_entities so that the JoinTableNormalizerPass
+ * injects the mappings into JoinTableNormalizerSubscriber at compile time.
+ * The ORM fixtures in this directory use interface-targeted ManyToMany mappings
+ * so the subscriber can be verified end-to-end.
  */
-final class ComponentFunctionalKernel extends Kernel
+final class JoinTableNormalizerKernel extends Kernel
 {
     use MicroKernelTrait;
 
@@ -50,8 +57,6 @@ final class ComponentFunctionalKernel extends Kernel
             'http_method_override' => false,
             'csrf_protection'      => false,
             'session'              => ['storage_factory_id' => 'session.storage.factory.mock_file'],
-            'validation'           => ['enable_attributes' => true],
-            'property_info'        => ['enabled' => true],
         ]);
 
         $container->loadFromExtension('security', [
@@ -61,13 +66,13 @@ final class ComponentFunctionalKernel extends Kernel
         ]);
 
         $container->loadFromExtension('twig', [
-            'default_path'     => '%kernel.project_dir%/templates',
-            'strict_variables' => true,
+            'default_path' => '%kernel.project_dir%/templates',
         ]);
 
-        $container->register('test.file_handler', \Kachnitel\EntityComponentsBundle\Interface\FileHandlerInterface::class)
+        // Synthetic service placeholders for bundle components not under test.
+        $container->register('test.file_handler', FileHandlerInterface::class)
             ->setSynthetic(true);
-        $container->setAlias(\Kachnitel\EntityComponentsBundle\Interface\FileHandlerInterface::class, 'test.file_handler')
+        $container->setAlias(FileHandlerInterface::class, 'test.file_handler')
             ->setPublic(true);
 
         $container->register('test.logger', \Psr\Log\LoggerInterface::class)
@@ -80,24 +85,34 @@ final class ComponentFunctionalKernel extends Kernel
         $container->setAlias(\Symfony\Bundle\SecurityBundle\Security::class, 'test.security')
             ->setPublic(true);
 
-        $ormConfig = [
-            'naming_strategy' => 'doctrine.orm.naming_strategy.underscore_number_aware',
-            'auto_mapping'    => false,
-            'mappings'        => [
-                'ComponentTests' => [
-                    'is_bundle' => false,
-                    'type'      => 'attribute',
-                    'dir'       => __DIR__ . '/Fixtures',
-                    'prefix'    => 'Kachnitel\\EntityComponentsBundle\\Tests\\Components\\Fixtures',
-                    'alias'     => 'ComponentTests',
-                ],
-            ],
-        ];
-
         /** @disregard P1009 */
         $isDoctrineBundle3 = !interface_exists(
             \Doctrine\Bundle\DoctrineBundle\EventSubscriber\EventSubscriberInterface::class
         );
+
+        $ormConfig = [
+            'naming_strategy'         => 'doctrine.orm.naming_strategy.underscore_number_aware',
+            'auto_mapping'            => false,
+            // Resolve bundle interfaces to test fixture concrete classes.
+            // This is the key config that JoinTableNormalizerPass reads.
+            'resolve_target_entities' => [
+                TagInterface::class =>
+                    Fixtures\NormalizerTestTag::class,
+                AttachmentInterface::class =>
+                    Fixtures\NormalizerTestAttachment::class,
+                CommentInterface::class =>
+                    Fixtures\NormalizerTestComment::class,
+            ],
+            'mappings' => [
+                'NormalizerTests' => [
+                    'is_bundle' => false,
+                    'type'      => 'attribute',
+                    'dir'       => __DIR__ . '/Fixtures',
+                    'prefix'    => 'Kachnitel\\EntityComponentsBundle\\Tests\\Doctrine\\Fixtures',
+                    'alias'     => 'NormalizerTests',
+                ],
+            ],
+        ];
 
         if (!$isDoctrineBundle3) {
             $ormConfig['auto_generate_proxy_classes'] = true;
@@ -108,21 +123,18 @@ final class ComponentFunctionalKernel extends Kernel
         }
 
         $container->loadFromExtension('doctrine', [
-            'dbal' => [
-                'driver' => 'pdo_sqlite',
-                'url'    => 'sqlite:///:memory:',
-            ],
-            'orm' => $ormConfig,
+            'dbal' => ['driver' => 'pdo_sqlite', 'url' => 'sqlite:///:memory:'],
+            'orm'  => $ormConfig,
         ]);
     }
 
     public function getCacheDir(): string
     {
-        return sys_get_temp_dir() . '/kachnitel_entity_components_bundle/component_functional_tests/cache';
+        return sys_get_temp_dir() . '/kachnitel_entity_components_bundle/normalizer_tests/cache';
     }
 
     public function getLogDir(): string
     {
-        return sys_get_temp_dir() . '/kachnitel_entity_components_bundle/component_functional_tests/logs';
+        return sys_get_temp_dir() . '/kachnitel_entity_components_bundle/normalizer_tests/logs';
     }
 }

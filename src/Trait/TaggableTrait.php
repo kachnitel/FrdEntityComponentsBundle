@@ -4,21 +4,29 @@ namespace Kachnitel\EntityComponentsBundle\Trait;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\Mapping as ORM;
 use Kachnitel\EntityComponentsBundle\Interface\TagInterface;
 
 /**
  * Trait for entities that support tagging
  *
- * Note: You must add the ORM\ManyToMany mapping in your entity class:
- * #[ORM\ManyToMany(targetEntity: YourTagClass::class)]
- * private Collection $tags;
+ * Note: You must add the following to your Doctrine configuration
+ * to resolve the TagInterface to your actual Tag entity:
  *
+ * ```
+ * doctrine:
+ *   orm:
+ *       resolve_target_entities:
+ *           Kachnitel\EntityComponentsBundle\Interface\TagInterface: App\Entity\Tag
+ *           Kachnitel\EntityComponentsBundle\Interface\AttachmentInterface: App\Entity\Attachment
+ * ```
  *
  * @template T of TagInterface
  */
 trait TaggableTrait
 {
     /** @var Collection<int, T> $tags */
+    #[ORM\ManyToMany(targetEntity: TagInterface::class)]
     private Collection $tags;
 
     /**

@@ -64,4 +64,13 @@ return static function (ContainerConfigurator $container): void {
         ->tag('twig.extension');
     $services->set(UtilExtension::class)
         ->tag('twig.extension');
+
+    // ── Doctrine event subscribers ─────────────────────────────────────────────
+    // JoinTableNormalizerSubscriber rewrites interface-named join tables to use
+    // the concrete class name configured in resolve_target_entities.
+    // autoconfigure tags it as doctrine.event_subscriber automatically.
+    $services->load(
+        'Kachnitel\\EntityComponentsBundle\\Doctrine\\',
+        dirname(__DIR__) . '/src/Doctrine'
+    );
 };

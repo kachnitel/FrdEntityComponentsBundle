@@ -1,9 +1,9 @@
 # Kachnitel Entity Components Bundle
 
 <!-- BADGES -->
-![Tests](<https://img.shields.io/badge/tests-365%20passed-red>)
-![Coverage](<https://img.shields.io/badge/coverage-56%25-red>)
-![Assertions](<https://img.shields.io/badge/assertions-628-blue>)
+![Tests](<https://img.shields.io/badge/tests-386%20passed-red>)
+![Coverage](<https://img.shields.io/badge/coverage-19%25-red>)
+![Assertions](<https://img.shields.io/badge/assertions-674-blue>)
 ![PHPStan](<https://img.shields.io/badge/PHPStan-6-brightgreen>)
 ![PHP](<https://img.shields.io/badge/PHP-&gt;=8.2-777BB4?logo=php&logoColor=white>)
 ![Symfony](<https://img.shields.io/badge/Symfony-^6.4|^7.0|^8.0-000000?logo=symfony&logoColor=white>)
@@ -19,7 +19,30 @@ Reusable Symfony Live Components for entity management: tags, file attachments, 
 composer require kachnitel/entity-components-bundle
 ```
 
-### 2. Use any component
+### 2. Map interfaces to your concrete classes
+
+For each bundle feature you use, add one line to `config/packages/doctrine.yaml`:
+
+```yaml
+# config/packages/doctrine.yaml
+doctrine:
+    orm:
+        resolve_target_entities:
+            # Add only the lines relevant to features you use:
+            Kachnitel\EntityComponentsBundle\Interface\TagInterface: App\Entity\Tag
+            Kachnitel\EntityComponentsBundle\Interface\AttachmentInterface: App\Entity\Attachment
+```
+
+### 3. Use the traits and drop in components
+
+```php
+// Any entity that needs tags — no extra ORM mapping required
+class Product implements TaggableInterface
+{
+    use TaggableTrait;
+    public function __construct() { $this->initializeTags(); }
+}
+```
 
 ```twig
 {{# Inline-edit a text field — any entity property with a setter #}}

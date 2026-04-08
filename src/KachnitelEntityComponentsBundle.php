@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Kachnitel\EntityComponentsBundle;
 
 use Kachnitel\EntityComponentsBundle\DependencyInjection\Compiler\AttachmentManagerPass;
+use Kachnitel\EntityComponentsBundle\DependencyInjection\Compiler\JoinTableNormalizerPass;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -38,6 +39,12 @@ class KachnitelEntityComponentsBundle extends AbstractBundle
             new AttachmentManagerPass(),
             PassConfig::TYPE_BEFORE_OPTIMIZATION,
             10  // Higher priority = runs before Symfony's controller locator passes (priority 0)
+        );
+
+        $container->addCompilerPass(
+            new JoinTableNormalizerPass(),
+            PassConfig::TYPE_BEFORE_OPTIMIZATION,
+            10
         );
     }
 

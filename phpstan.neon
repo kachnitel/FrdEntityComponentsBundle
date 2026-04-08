@@ -1,29 +1,28 @@
 parameters:
-    level: 6
-    paths:
-        - src
-        - tests
-    tmpDir: .phpstan
-    ignoreErrors:
-        # Doctrine repository template type cannot be resolved statically
-        - '#Unable to resolve the template type T in call to method Doctrine\\ORM\\EntityManagerInterface::getRepository\(\)#'
+  level: 6
+  paths:
+    - src
+    - tests
+  tmpDir: .phpstan
+  ignoreErrors:
+    # Doctrine repository template type cannot be resolved statically
+    - '#Unable to resolve the template type T in call to method Doctrine\\ORM\\EntityManagerInterface::getRepository\(\)#'
 
-        # method_exists() checks for Symfony version compatibility are always true on the installed version
-        - '#Call to function method_exists\(\) .+ will always evaluate to true#'
+    # method_exists() checks for Symfony version compatibility are always true on the installed version
+    - '#Call to function method_exists\(\) .+ will always evaluate to true#'
 
-        # PHPUnit generic assertions can trigger "always true" for narrowed types
-        - '#Call to method PHPUnit\\Framework\\Assert::\w+\(\) .+ will always evaluate to true#'
+    # PHPUnit generic assertions can trigger "always true" for narrowed types
+    - '#Call to method PHPUnit\\Framework\\Assert::\w+\(\) .+ will always evaluate to true#'
 
-        # Generic class without type specification
-        - '#extends generic class .+ but does not specify its types#'
+    # Generic class without type specification
+    - '#extends generic class .+ but does not specify its types#'
 
-        # Missing iterable value types in array declarations — intentional for brevity
-        - identifier: missingType.iterableValue
+    # Missing iterable value types in array declarations — intentional for brevity
+    - identifier: missingType.iterableValue
 
-        # Negated boolean expressions arising from PHPDoc type narrowing
-        - '#Negated boolean expression is always false#'
+    # Negated boolean expressions arising from PHPDoc type narrowing
+    - '#Negated boolean expression is always false#'
 
-        # Deprecated Symfony PropertyInfo Type class used for 6.4 backwards compatibility
-        -
-            identifier: class.notFound
-            path: tests/Components/SelectRelationshipTest.php
+    # Deprecated Symfony PropertyInfo Type class used for 6.4 backwards compatibility
+    - identifier: class.notFound
+      path: tests/Components/SelectRelationshipTest.php

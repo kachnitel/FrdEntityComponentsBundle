@@ -122,6 +122,7 @@ final class FieldTestKernel extends Kernel
 
         // doctrine-bundle 3.x removed proxy/ghost config options entirely.
         // Detect by checking for an interface that was removed in 3.0.
+        /** @disregard P1009 */
         $isDoctrineBundle3 = !interface_exists(
             \Doctrine\Bundle\DoctrineBundle\EventSubscriber\EventSubscriberInterface::class
         );

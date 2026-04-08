@@ -4,7 +4,17 @@ Add threaded comments with author attribution and delete confirmation to any ent
 
 ## Quick Start
 
-### 1. Create a Comment entity
+### 1. Tell Doctrine which class implements `CommentInterface`
+
+```yaml
+# config/packages/doctrine.yaml
+doctrine:
+    orm:
+        resolve_target_entities:
+            Kachnitel\EntityComponentsBundle\Interface\CommentInterface: App\Entity\Comment
+```
+
+### 2. Create a Comment entity
 
 ```php
 use Kachnitel\EntityComponentsBundle\Interface\CommentInterface;
@@ -35,26 +45,25 @@ class Comment implements CommentInterface
 }
 ```
 
-### 2. Implement CommentableInterface on your entity
+### 3. Use the trait on any entity
+
+The `CommentableTrait` includes the full Doctrine mapping — no `#[ORM\ManyToMany]`
+declaration needed in your entity:
 
 ```php
 use Kachnitel\EntityComponentsBundle\Interface\CommentableInterface;
+use Kachnitel\EntityComponentsBundle\Trait\CommentableTrait;
 
 #[ORM\Entity]
 class Article implements CommentableInterface
 {
-    #[ORM\ManyToMany(targetEntity: Comment::class, cascade: ['persist', 'remove'])]
-    private Collection $comments;
+    use CommentableTrait;
 
-    public function __construct() { $this->comments = new ArrayCollection(); }
-
-    public function getComments(): Collection { return $this->comments; }
-    public function addComment(CommentInterface $comment): static { ... }
-    public function removeComment(CommentInterface $comment): static { ... }
+    public function __construct() { $this->initializeComments(); }
 }
 ```
 
-### 3. Drop the component into any template
+### 4. Drop the component into any template
 
 ```twig
 <twig:K:Entity:CommentsManager
@@ -68,6 +77,32 @@ Users can post new comments and delete their own (admins can delete any).
 ---
 
 ## What's Next?
+
+<details>
+<summary><strong>Join table naming</strong></summary>
+
+The bundle automatically generates join table names from the owning entity and
+your concrete comment class, e.g. `Article` + `Comment` → `article_comment`.
+
+This works correctly even when your concrete class name differs from the
+interface name. No extra configuration is required.
+
+Comments are cascade-persisted and cascade-removed by default (since a comment
+has no meaningful existence outside its parent entity). To override, redeclare
+the property in your entity:
+
+```php
+class Article implements CommentableInterface
+{
+    use CommentableTrait;
+
+    #[ORM\ManyToMany(targetEntity: CommentInterface::class, cascade: [])]
+    #[ORM\JoinTable(name: 'article_notes')]
+    private Collection $comments;
+}
+```
+
+</details>
 
 <details>
 <summary><strong>Read-only display</strong></summary>
@@ -108,8 +143,6 @@ Define a `MAX_TEXT_LENGTH` constant on your Comment class and the textarea `maxl
 class Comment implements CommentInterface
 {
     public const MAX_TEXT_LENGTH = 500;
-
-    // ...
 }
 ```
 
@@ -123,7 +156,6 @@ If the constant is absent, the default limit of `4096` is used.
 The component calls `setCreatedBy()` on the comment before persisting, passing the currently authenticated user. Add the method to your Comment entity and store the relation however suits your app:
 
 ```php
-// Single-user app — store a User relation
 #[ORM\ManyToOne]
 private ?User $createdBy = null;
 
@@ -142,6 +174,22 @@ The template shows the author's `name` property (or falls back to casting to str
 <summary><strong>Delete confirmation</strong></summary>
 
 Clicking delete once sets a `confirmId` on the component and re-renders the button as "Confirm". Clicking a second time executes the delete. This two-step pattern is built-in and requires no extra configuration.
+
+</details>
+
+<details>
+<summary><strong>CommentableTrait reference</strong></summary>
+
+The trait provides `getComments()`, `addComment()`, and `removeComment()`, as
+well as the `#[ORM\ManyToMany]` mapping targeting `CommentInterface` with
+`cascade: ['persist', 'remove']`. You must:
+
+1. Add `use CommentableTrait;` to your entity
+2. Call `$this->initializeComments()` in your entity constructor
+3. Configure `resolve_target_entities` in `doctrine.yaml` (see Quick Start)
+
+The join table name is derived from your entity and concrete comment class
+names and is normalised automatically.
 
 </details>
 

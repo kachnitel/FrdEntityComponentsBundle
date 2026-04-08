@@ -4,12 +4,20 @@ Add colored, categorized tags to any entity in three steps.
 
 ## Quick Start
 
-### 1. Implement the interfaces on your entity
+### 1. Tell Doctrine which class implements `TagInterface`
+
+```yaml
+# config/packages/doctrine.yaml
+doctrine:
+    orm:
+        resolve_target_entities:
+            Kachnitel\EntityComponentsBundle\Interface\TagInterface: App\Entity\Tag
+```
+
+### 2. Create a Tag entity
 
 ```php
-use Kachnitel\EntityComponentsBundle\Interface\TaggableInterface;
 use Kachnitel\EntityComponentsBundle\Interface\TagInterface;
-use Kachnitel\EntityComponentsBundle\Trait\TaggableTrait;
 
 #[ORM\Entity]
 class Tag implements TagInterface
@@ -26,20 +34,27 @@ class Tag implements TagInterface
     public function getCategory(): ?string { return null; }
     public function getCategoryColor(): string { return 'cccccc'; }
 }
+```
+
+### 3. Use the trait on any entity
+
+The `TaggableTrait` includes the full Doctrine mapping — no `#[ORM\ManyToMany]`
+declaration needed in your entity:
+
+```php
+use Kachnitel\EntityComponentsBundle\Interface\TaggableInterface;
+use Kachnitel\EntityComponentsBundle\Trait\TaggableTrait;
 
 #[ORM\Entity]
 class Product implements TaggableInterface
 {
     use TaggableTrait;
 
-    #[ORM\ManyToMany(targetEntity: Tag::class)]
-    private Collection $tags;
-
     public function __construct() { $this->initializeTags(); }
 }
 ```
 
-### 2. Drop the component into any template
+### 4. Drop the component into any template
 
 ```twig
 <twig:K:Entity:TagManager
@@ -53,6 +68,34 @@ That's it. Users can browse all tags, add and remove them, and save changes in-p
 ---
 
 ## What's Next?
+
+<details>
+<summary><strong>Join table naming</strong></summary>
+
+The bundle automatically generates join table names from the owning entity and
+your concrete tag class, e.g. `Product` + `Tag` → `product_tag`,
+`UploadedFile` + `Tag` → `uploaded_file_tag`.
+
+This works correctly even when your concrete class name differs from the
+interface name (e.g. `UploadedFile implements AttachmentInterface` produces
+`product_uploaded_file`, not `product_attachment_interface`). No extra
+configuration is required beyond the `resolve_target_entities` entry above.
+
+If you need to override the table name for a specific entity — for example,
+to match a legacy schema — redeclare the property in your entity:
+
+```php
+class Product implements TaggableInterface
+{
+    use TaggableTrait;
+
+    #[ORM\ManyToMany(targetEntity: TagInterface::class)]
+    #[ORM\JoinTable(name: 'product_tags')]
+    private Collection $tags;
+}
+```
+
+</details>
 
 <details>
 <summary><strong>Read-only display</strong></summary>
@@ -107,6 +150,21 @@ public function getDisplayName(): ?string
 </details>
 
 <details>
+<summary><strong>TaggableTrait reference</strong></summary>
+
+The trait provides `getTags()`, `addTag()`, and `removeTag()`, as well as the
+`#[ORM\ManyToMany]` mapping targeting `TagInterface`. You must:
+
+1. Add `use TaggableTrait;` to your entity
+2. Call `$this->initializeTags()` in your entity constructor
+3. Configure `resolve_target_entities` in `doctrine.yaml` (see Quick Start)
+
+The join table name is derived from your entity and concrete tag class names
+and is normalised automatically by the bundle.
+
+</details>
+
+<details>
 <summary><strong>Tag interface reference</strong></summary>
 
 | Method | Return | Required | Description |
@@ -116,23 +174,5 @@ public function getDisplayName(): ?string
 | `getDisplayName()` | `?string` | ✅ | Label shown in UI (falls back to value) |
 | `getCategory()` | `?string` | ✅ | Optional grouping key |
 | `getCategoryColor()` | `string` | ✅ | Hex color without `#`, e.g. `'3498db'` |
-
-</details>
-
-<details>
-<summary><strong>TaggableTrait reference</strong></summary>
-
-The trait provides `getTags()`, `addTag()`, and `removeTag()`. You must:
-
-1. Add `use TaggableTrait;` to your entity
-2. Declare the `$tags` collection with the `#[ORM\ManyToMany]` mapping pointing at your Tag class
-3. Call `$this->initializeTags()` in your constructor
-
-```php
-#[ORM\ManyToMany(targetEntity: Tag::class)]
-private Collection $tags;
-```
-
-The trait handles the rest.
 
 </details>
